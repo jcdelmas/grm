@@ -22,21 +22,92 @@ const Person = groom.define('Person', {
     gender: {},
     age: {},
   },
+  relations: {
+    city: { model: 'City' },
+    favoriteMovies: {
+      model: 'Movie',
+      through: 'FavoriteMovie',
+      order: 'position',
+    },
+  },
+});
+
+groom.define('City', {
+  fields: {
+    id: {},
+    name: {},
+  },
+});
+
+groom.define('Movie', {
+  fields: {
+    id: {},
+    name: {},
+  },
+});
+
+groom.define('FavoriteMovie', {
+  fields: {
+    position: {},
+  },
+  relations: {
+    person: { model: 'Person' },
+    movie: { model: 'Movie' },
+  },
 });
 
 const data = {
   persons: [
-      [1, 'John',     'Doe',     'jdoe',     'john.doe@msn.com',          'M', 20],
-      [2, 'Brad',     'Smith',   'bsmith',   'brad.smith@yahoo.com',      'M', 64],
-      [3, 'Lauren',   'Carter',  'lcarter',  'lauren.carter@hotmail.com', 'W', 37],
-      [4, 'Robert',   'Johnson', 'rjohnson', 'robert.johnson@gmail.com',  'M', 17],
-      [5, 'Patricia', 'Moore',   'pmoore',   'patricia.moore@gmail.com',  'W', 53],
-      [6, 'John',     'Brown',   'jbrown',   'john.brown@gmail.com',      'M', 28],
+      [1, 'John',     'Doe',     'jdoe',     'john.doe@msn.com',          'M', 20, 1],
+      [2, 'Brad',     'Smith',   'bsmith',   'brad.smith@yahoo.com',      'M', 64, 2],
+      [3, 'Lauren',   'Carter',  'lcarter',  'lauren.carter@hotmail.com', 'W', 37, 1],
+      [4, 'Robert',   'Johnson', 'rjohnson', 'robert.johnson@gmail.com',  'M', 17, 3],
+      [5, 'Patricia', 'Moore',   'pmoore',   'patricia.moore@gmail.com',  'W', 53, 3],
+      [6, 'John',     'Brown',   'jbrown',   'john.brown@gmail.com',      'M', 28, 1],
+  ],
+  cities: [
+    [1, 'New-York'],
+    [2, 'San Francisco'],
+    [3, 'Seattle'],
+  ],
+  movies: [
+    [1, 'The Godfather'],
+    [2, 'Pulp Fiction'],
+    [3, 'The Good, the Bad and the Ugly'],
+    [4, 'Forrest Gump'],
+    [5, 'The Lord of the Rings'],
+    [6, 'Star Wars'],
+    [7, 'Usual Suspects'],
+    [8, 'The Green Mile'],
+  ],
+  favoriteMovies: [
+    [1, 2, 1],
+    [1, 6, 2],
+    [1, 5, 3],
+    [2, 5, 1],
+    [3, 2, 1],
+    [3, 8, 2],
+    [3, 1, 3],
+    [4, 3, 1],
+    [4, 7, 2],
+    [4, 5, 3],
+    [5, 6, 1],
+    [5, 1, 2],
+    [6, 8, 1],
+    [6, 5, 2],
+    [6, 3, 3],
   ],
 };
 
+function values(items) {
+  return items.map(fields => '(' + fields.map(client.escape).join(', ') + ')').join(', ')
+}
+
 before(async () => {
   await client.query(`DROP TABLE IF EXISTS person`);
+  await client.query(`DROP TABLE IF EXISTS city`);
+  await client.query(`DROP TABLE IF EXISTS movie`);
+  await client.query(`DROP TABLE IF EXISTS favorite_movie`);
   await client.query(`
     CREATE TABLE person (
       id int(11) UNIQUE NOT NULL,
@@ -46,12 +117,47 @@ before(async () => {
       email varchar(100) UNIQUE NOT NULL,
       gender char(1) NOT NULL,
       age int NOT NULL,
+      city_id int(11) NOT NULL,
       PRIMARY KEY (id)
     )
   `);
   await client.query(`
-    INSERT INTO person (id, firstname, lastname, login, email, gender, age)
-    VALUES ${data.persons.map(person => '(' + person.map(client.escape).join(', ') + ')').join(', ')}
+    CREATE TABLE city (
+      id int(11) UNIQUE NOT NULL,
+      name varchar(50) NOT NULL,
+      PRIMARY KEY (id)
+    )
+  `);
+  await client.query(`
+    CREATE TABLE movie (
+      id int(11) UNIQUE NOT NULL,
+      name varchar(50) NOT NULL,
+      PRIMARY KEY (id)
+    )
+  `);
+  await client.query(`
+    CREATE TABLE favorite_movie (
+      person_id int(11) NOT NULL,
+      movie_id int(11) NOT NULL,
+      position int(11) NOT NULL,
+      PRIMARY KEY (person_id, movie_id)
+    )
+  `);
+  await client.query(`
+    INSERT INTO person (id, firstname, lastname, login, email, gender, age, city_id)
+    VALUES ${values(data.persons)}
+  `);
+  await client.query(`
+    INSERT INTO city (id, name)
+    VALUES ${values(data.cities)}
+  `);
+  await client.query(`
+    INSERT INTO movie (id, name)
+    VALUES ${values(data.movies)}
+  `);
+  await client.query(`
+    INSERT INTO favorite_movie (person_id, movie_id, position)
+    VALUES ${values(data.favoriteMovies)}
   `);
 });
 
@@ -59,10 +165,37 @@ describe('Model', () => {
   describe('#findAll', () => {
     it('should return all rows from table', async () => {
       const rows = await Person.findAll();
-      const persons = rows.map(
-        ({ id, firstname, lastname, login, email, gender, age }) => [id, firstname, lastname, login, email, gender, age]
-      );
-      persons.should.be.eql(data.persons);
+      rows.should.be.eql(data.persons.map(([id, firstname, lastname, login, email, gender, age, cityId]) => {
+        return { id, firstname, lastname, login, email, gender, age, city: { id: cityId } };
+      }));
+    });
+
+    describe('includes', () => {
+      it('many-to-one', async () => {
+        const rows = await Person.findAll({
+          includes: { city: true },
+          where: { age: { $lt: 30 } },
+          order: 'age',
+        });
+        rows.map(({ login, city }) => ([ login, city.name ])).should.be.eql([
+          ['rjohnson', 'Seattle' ],
+          ['jdoe', 'New-York' ],
+          ['jbrown', 'New-York' ],
+        ]);
+      });
+
+      it('many-to-many', async () => {
+        const rows = await Person.findAll({
+          includes: { favoriteMovies: true },
+          where: { age: { $gt: 30 } },
+          order: 'age',
+        });
+        rows.map(({ login, favoriteMovies }) => ([ login, favoriteMovies.map(m => m.name) ])).should.be.eql([
+          ['lcarter', [ 'Pulp Fiction', 'The Green Mile', 'The Godfather' ] ],
+          ['pmoore', [ 'Star Wars', 'The Godfather' ] ],
+          ['bsmith', [ 'The Lord of the Rings' ] ],
+        ]);
+      });
     });
 
     describe('sort', () => {
