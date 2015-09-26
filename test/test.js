@@ -61,99 +61,105 @@ describe('Model', () => {
       persons.should.be.eql(data.persons);
     });
 
-    it('should filter rows properly 1', async () => {
-      const rows = await Person.findAll({ where: { age: { $gt: 30 } } });
-      rows.map(r => r.login).should.be.eql([
-        'bsmith',
-        'lcarter',
-        'pmoore',
-      ]);
-    });
-
-    it('should sort rows properly', async () => {
-      const rows = await Person.findAll({ order: 'age' });
-      rows.map(r => r.login).should.be.eql([
-        'rjohnson',
-        'jdoe',
-        'jbrown',
-        'lcarter',
-        'pmoore',
-        'bsmith',
-      ]);
-    });
-
-    it('should sort rows properly (desc)', async () => {
-      const rows = await Person.findAll({
-        where: { age: { $gt: 30 } },
-        order: '-age',
+    describe('sort', () => {
+      it('basic', async () => {
+        const rows = await Person.findAll({ order: 'age' });
+        rows.map(r => r.login).should.be.eql([
+          'rjohnson',
+          'jdoe',
+          'jbrown',
+          'lcarter',
+          'pmoore',
+          'bsmith',
+        ]);
       });
-      rows.map(r => r.login).should.be.eql([
-        'bsmith',
-        'pmoore',
-        'lcarter',
-      ]);
-    });
 
-    it('should sort rows properly (multiple)', async () => {
-      const rows = await Person.findAll({
-        order: [ 'firstname', 'lastname' ],
+      it('desc', async () => {
+        const rows = await Person.findAll({
+          where: { age: { $gt: 30 } },
+          order: '-age',
+        });
+        rows.map(r => r.login).should.be.eql([
+          'bsmith',
+          'pmoore',
+          'lcarter',
+        ]);
       });
-      rows.map(r => r.login).should.be.eql([
-        'bsmith',
-        'jbrown',
-        'jdoe',
-        'lcarter',
-        'pmoore',
-        'rjohnson',
-      ]);
-    });
 
-    it('should filter rows properly (and)', async () => {
-      const rows = await Person.findAll({
-        where: {
-          age: { $lt: 30 },
-          email: { $like: '%@gmail.com' },
-        },
-        order: 'id',
+      it('multiple', async () => {
+        const rows = await Person.findAll({
+          order: [ 'firstname', 'lastname' ],
+        });
+        rows.map(r => r.login).should.be.eql([
+          'bsmith',
+          'jbrown',
+          'jdoe',
+          'lcarter',
+          'pmoore',
+          'rjohnson',
+        ]);
       });
-      rows.map(r => r.login).should.be.eql([
-        'rjohnson',
-        'jbrown',
-      ]);
     });
 
-    it('should filter rows properly (or)', async () => {
-      const rows = await Person.findAll({
-        where: {
-          $or: {
-            age: { $gt: 60 },
-            email: { $like: '%@hotmail.com' },
-          },
-        },
-        order: 'id',
+    describe('filter', () => {
+
+      it('basic', async () => {
+        const rows = await Person.findAll({ where: { age: { $gt: 30 } } });
+        rows.map(r => r.login).should.be.eql([
+          'bsmith',
+          'lcarter',
+          'pmoore',
+        ]);
       });
-      rows.map(r => r.login).should.be.eql([
-        'bsmith',
-        'lcarter',
-      ]);
-    });
 
-    it('should filter rows properly (and, or, not)', async () => {
-      const rows = await Person.findAll({
-        where: {
-          age: { $le: 50 },
-          $or: {
-            age: 20,
+      it('and', async () => {
+        const rows = await Person.findAll({
+          where: {
+            age: { $lt: 30 },
             email: { $like: '%@gmail.com' },
           },
-        },
-        order: 'id',
+          order: 'id',
+        });
+        rows.map(r => r.login).should.be.eql([
+          'rjohnson',
+          'jbrown',
+        ]);
       });
-      rows.map(r => r.login).should.be.eql([
-        'jdoe',
-        'rjohnson',
-        'jbrown',
-      ]);
+
+      it('or', async () => {
+        const rows = await Person.findAll({
+          where: {
+            $or: {
+              age: { $gt: 60 },
+              email: { $like: '%@hotmail.com' },
+            },
+          },
+          order: 'id',
+        });
+        rows.map(r => r.login).should.be.eql([
+          'bsmith',
+          'lcarter',
+        ]);
+      });
+
+      it('and, or', async () => {
+        const rows = await Person.findAll({
+          where: {
+            age: { $le: 50 },
+            $not: {
+              $or: {
+                age: 20,
+                email: { $like: '%@hotmail.com' },
+              },
+            },
+          },
+          order: 'id',
+        });
+        rows.map(r => r.login).should.be.eql([
+          'rjohnson',
+          'jbrown',
+        ]);
+      });
     });
   });
 });
