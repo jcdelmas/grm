@@ -204,7 +204,7 @@ describe('Model', () => {
     });
 
     describe('group', () => {
-      it('basic', async () => {
+      it('count', async () => {
         const rows = await Person.findAll({
           select: { gender: 'gender', count: sql.count(sql.field('id')) },
           groupBy: 'gender',
@@ -213,6 +213,27 @@ describe('Model', () => {
         rows.should.be.eql([
           { gender: 'M', count: 4 },
           { gender: 'W', count: 2 },
+        ]);
+      });
+      it('avg', async () => {
+        const rows = await Person.findAll({
+          select: { gender: 'gender', age: sql.avg(sql.field('age')) },
+          groupBy: 'gender',
+          order: sql.desc(sql.count(sql.field('id'))),
+        });
+        rows.should.be.eql([
+          { gender: 'M', age: 32.25 },
+          { gender: 'W', age: 45 },
+        ]);
+      });
+      it('having', async () => {
+        const rows = await Person.findAll({
+          select: { gender: 'gender', age: sql.avg(sql.field('age')) },
+          groupBy: 'gender',
+          having: sql.gt(sql.avg(sql.field('age')), 40),
+        });
+        rows.should.be.eql([
+          { gender: 'W', age: 45 },
         ]);
       });
     });
