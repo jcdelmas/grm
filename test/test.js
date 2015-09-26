@@ -237,5 +237,36 @@ describe('Model', () => {
         ]);
       });
     });
+
+    describe('functions and operations', () => {
+      it('minus', async () => {
+        const rows = await Person.findAll({
+          select: { login: 'login', age: sql.minus(sql.field('age'), 10) },
+          where: { age: { $gt: 30 } },
+          order: 'age',
+        });
+        rows.should.be.eql([
+          { login: 'lcarter', age: 27 },
+          { login: 'pmoore', age: 43 },
+          { login: 'bsmith', age: 54 },
+        ]);
+      });
+
+      // FIXME: replace 0 and 1 by boolean
+      it('comparison', async () => {
+        const rows = await Person.findAll({
+          select: { login: 'login', young: sql.lt(sql.field('age'), 30) },
+          order: 'login',
+        });
+        rows.should.be.eql([
+          { login: 'bsmith', young: 0 },
+          { login: 'jbrown', young: 1 },
+          { login: 'jdoe', young: 1 },
+          { login: 'lcarter', young: 0 },
+          { login: 'pmoore', young: 0 },
+          { login: 'rjohnson', young: 1 },
+        ]);
+      });
+    });
   });
 });
