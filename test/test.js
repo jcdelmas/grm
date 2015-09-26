@@ -1,7 +1,7 @@
 
 import should from 'should';
 
-import Groom from '../index.js';
+import Groom, { sql } from '../index.js';
 
 const groom = new Groom({
   user: 'root',
@@ -19,18 +19,19 @@ const Person = groom.define('Person', {
     lastname: {},
     login: {},
     email: {},
+    gender: {},
     age: {},
   },
 });
 
 const data = {
   persons: [
-      ['John',     'Doe',     'jdoe',     'john.doe@msn.com',          20],
-      ['Brad',     'Smith',   'bsmith',   'brad.smith@yahoo.com',      64],
-      ['Lauren',   'Carter',  'lcarter',  'lauren.carter@hotmail.com', 37],
-      ['Robert',   'Johnson', 'rjohnson', 'robert.johnson@gmail.com',  17],
-      ['Patricia', 'Moore',   'pmoore',   'patricia.moore@gmail.com',  53],
-      ['John',     'Brown',   'jbrown',   'john.brown@gmail.com',      28],
+      ['John',     'Doe',     'jdoe',     'john.doe@msn.com',          'M', 20],
+      ['Brad',     'Smith',   'bsmith',   'brad.smith@yahoo.com',      'M', 64],
+      ['Lauren',   'Carter',  'lcarter',  'lauren.carter@hotmail.com', 'W', 37],
+      ['Robert',   'Johnson', 'rjohnson', 'robert.johnson@gmail.com',  'M', 17],
+      ['Patricia', 'Moore',   'pmoore',   'patricia.moore@gmail.com',  'W', 53],
+      ['John',     'Brown',   'jbrown',   'john.brown@gmail.com',      'M', 28],
   ],
 };
 
@@ -43,12 +44,13 @@ before(async () => {
       lastname varchar(50) NOT NULL,
       login varchar(50) UNIQUE NOT NULL,
       email varchar(100) UNIQUE NOT NULL,
+      gender char(1) NOT NULL,
       age int NOT NULL,
       PRIMARY KEY (id)
     )
   `);
   await client.query(`
-    INSERT INTO person (firstname, lastname, login, email, age)
+    INSERT INTO person (firstname, lastname, login, email, gender, age)
     VALUES ${data.persons.map(person => '(' + person.map(client.escape).join(', ') + ')').join(', ')}
   `);
 });
@@ -57,7 +59,9 @@ describe('Model', () => {
   describe('#findAll', () => {
     it('should return all rows from table', async () => {
       const rows = await Person.findAll();
-      const persons = rows.map(({ firstname, lastname, login, email, age }) => [firstname, lastname, login, email, age]);
+      const persons = rows.map(
+        ({ firstname, lastname, login, email, gender, age }) => [firstname, lastname, login, email, gender, age]
+      );
       persons.should.be.eql(data.persons);
     });
 
@@ -102,7 +106,6 @@ describe('Model', () => {
     });
 
     describe('filter', () => {
-
       it('basic', async () => {
         const rows = await Person.findAll({ where: { age: { $gt: 30 } } });
         rows.map(r => r.login).should.be.eql([
@@ -158,6 +161,58 @@ describe('Model', () => {
         rows.map(r => r.login).should.be.eql([
           'rjohnson',
           'jbrown',
+        ]);
+      });
+    });
+
+    describe('select', () => {
+      it('one', async () => {
+        const rows = await Person.findAll({
+          select: 'login',
+          where: { age: { $lt: 30 } },
+        });
+        rows.should.be.eql([
+          'jdoe',
+          'rjohnson',
+          'jbrown',
+        ]);
+      });
+
+      it('multiple', async () => {
+        const rows = await Person.findAll({
+          select: [ 'login', 'age' ],
+          where: { age: { $lt: 30 } },
+        });
+        rows.should.be.eql([
+          { login: 'jdoe', age: 20 },
+          { login: 'rjohnson', age: 17 },
+          { login: 'jbrown', age: 28 },
+        ]);
+      });
+
+      it('with aliases', async () => {
+        const rows = await Person.findAll({
+          select: { foo: 'login', bar: 'age' },
+          where: { age: { $lt: 30 } },
+        });
+        rows.should.be.eql([
+          { foo: 'jdoe', bar: 20 },
+          { foo: 'rjohnson', bar: 17 },
+          { foo: 'jbrown', bar: 28 },
+        ]);
+      });
+    });
+
+    describe('group', () => {
+      it('basic', async () => {
+        const rows = await Person.findAll({
+          select: { gender: 'gender', count: sql.count(sql.field('id')) },
+          groupBy: 'gender',
+          order: sql.desc(sql.count(sql.field('id'))),
+        });
+        rows.should.be.eql([
+          { gender: 'M', count: 4 },
+          { gender: 'W', count: 2 },
         ]);
       });
     });
