@@ -196,6 +196,18 @@ describe('Model', () => {
           ['bsmith', [ 'The Lord of the Rings' ] ],
         ]);
       });
+
+      it('many-to-many (with filter on relation)', async () => {
+        const rows = await Person.findAll({
+          includes: { favoriteMovies: true },
+          where: { 'favoriteMovies.name': 'The Godfather' },
+          order: 'age',
+        });
+        rows.map(({ login, favoriteMovies }) => ([ login, favoriteMovies.map(m => m.name) ])).should.be.eql([
+          ['lcarter', [ 'Pulp Fiction', 'The Green Mile', 'The Godfather' ] ],
+          ['pmoore', [ 'Star Wars', 'The Godfather' ] ],
+        ]);
+      });
     });
 
     describe('sort', () => {
@@ -296,6 +308,48 @@ describe('Model', () => {
           'jbrown',
         ]);
       });
+
+      it('on many to one relation', async () => {
+        const rows = await Person.findAll({
+          where: {
+            city: { name: 'New-York' },
+          },
+          order: 'id',
+        });
+        rows.map(r => r.login).should.be.eql([
+          'jdoe',
+          'lcarter',
+          'jbrown',
+        ]);
+      });
+
+      it('on many to many relation', async () => {
+        const rows = await Person.findAll({
+          where: {
+            favoriteMovies: { name: { $in: [ 'Pulp Fiction', 'Star Wars' ] } },
+          },
+          order: 'id',
+        });
+        rows.map(r => r.login).should.be.eql([
+          'jdoe',
+          'lcarter',
+          'pmoore',
+        ]);
+      });
+
+      it('on multiple relations', async () => {
+        const rows = await Person.findAll({
+          where: {
+            favoriteMovies: { name: { $in: [ 'Pulp Fiction', 'Star Wars' ] } },
+            'city.name': 'New-York',
+          },
+          order: 'id',
+        });
+        rows.map(r => r.login).should.be.eql([
+          'jdoe',
+          'lcarter',
+        ]);
+      });
     });
 
     describe('select', () => {
@@ -367,6 +421,18 @@ describe('Model', () => {
         });
         rows.should.be.eql([
           { gender: 'W', age: 45 },
+        ]);
+      });
+      it('with many-to-one relation', async () => {
+        const rows = await Person.findAll({
+          select: { city: 'city.name', count: sql.count(sql.field('id')) },
+          group: 'city.id',
+          order: sql.desc(sql.count(sql.field('id'))),
+        });
+        rows.should.be.eql([
+          { city: 'New-York', count: 3 },
+          { city: 'Seattle', count: 2 },
+          { city: 'San Francisco', count: 1 },
         ]);
       });
     });
