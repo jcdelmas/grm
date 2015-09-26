@@ -26,12 +26,12 @@ const Person = groom.define('Person', {
 
 const data = {
   persons: [
-      ['John',     'Doe',     'jdoe',     'john.doe@msn.com',          'M', 20],
-      ['Brad',     'Smith',   'bsmith',   'brad.smith@yahoo.com',      'M', 64],
-      ['Lauren',   'Carter',  'lcarter',  'lauren.carter@hotmail.com', 'W', 37],
-      ['Robert',   'Johnson', 'rjohnson', 'robert.johnson@gmail.com',  'M', 17],
-      ['Patricia', 'Moore',   'pmoore',   'patricia.moore@gmail.com',  'W', 53],
-      ['John',     'Brown',   'jbrown',   'john.brown@gmail.com',      'M', 28],
+      [1, 'John',     'Doe',     'jdoe',     'john.doe@msn.com',          'M', 20],
+      [2, 'Brad',     'Smith',   'bsmith',   'brad.smith@yahoo.com',      'M', 64],
+      [3, 'Lauren',   'Carter',  'lcarter',  'lauren.carter@hotmail.com', 'W', 37],
+      [4, 'Robert',   'Johnson', 'rjohnson', 'robert.johnson@gmail.com',  'M', 17],
+      [5, 'Patricia', 'Moore',   'pmoore',   'patricia.moore@gmail.com',  'W', 53],
+      [6, 'John',     'Brown',   'jbrown',   'john.brown@gmail.com',      'M', 28],
   ],
 };
 
@@ -39,7 +39,7 @@ before(async () => {
   await client.query(`DROP TABLE IF EXISTS person`);
   await client.query(`
     CREATE TABLE person (
-      id int(11) NOT NULL AUTO_INCREMENT,
+      id int(11) UNIQUE NOT NULL,
       firstname varchar(50) NOT NULL,
       lastname varchar(50) NOT NULL,
       login varchar(50) UNIQUE NOT NULL,
@@ -50,7 +50,7 @@ before(async () => {
     )
   `);
   await client.query(`
-    INSERT INTO person (firstname, lastname, login, email, gender, age)
+    INSERT INTO person (id, firstname, lastname, login, email, gender, age)
     VALUES ${data.persons.map(person => '(' + person.map(client.escape).join(', ') + ')').join(', ')}
   `);
 });
@@ -60,7 +60,7 @@ describe('Model', () => {
     it('should return all rows from table', async () => {
       const rows = await Person.findAll();
       const persons = rows.map(
-        ({ firstname, lastname, login, email, gender, age }) => [firstname, lastname, login, email, gender, age]
+        ({ id, firstname, lastname, login, email, gender, age }) => [id, firstname, lastname, login, email, gender, age]
       );
       persons.should.be.eql(data.persons);
     });
