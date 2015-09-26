@@ -1,5 +1,4 @@
 
-import _ from 'lodash';
 import should from 'should';
 
 import Groom from '../index.js';
@@ -8,7 +7,7 @@ const groom = new Groom({
   user: 'root',
   password: 'root',
   database: 'groom',
-  logging: false
+  logging: false,
 });
 
 const client = groom.client;
@@ -17,15 +16,15 @@ const Person = groom.define('Person', {
   fields: {
     id: {},
     firstname: {},
-    lastname: {}
-  }
+    lastname: {},
+  },
 });
 
 const data = {
   persons: [
       ['John', 'Doe'],
-      ['Brad', 'Smith']
-  ]
+      ['Brad', 'Smith'],
+  ],
 };
 
 before(async () => {
@@ -51,5 +50,5 @@ describe('Model', () => {
       const persons = rows.map(({ firstname, lastname }) => [firstname, lastname]);
       should(persons).deepEqual(data.persons);
     });
-  })
+  });
 });

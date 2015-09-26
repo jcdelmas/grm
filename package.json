@@ -8,7 +8,7 @@
   },
   "scripts": {
     "test": "mocha --require babelhook",
-    "lint": "eslint lib"
+    "lint": "eslint lib test"
   },
   "keywords": [
     "ORM",
