@@ -1,4 +1,6 @@
 
+import 'should';
+
 import Groom, { sql } from '../index.js';
 
 const groom = new Groom({
@@ -263,6 +265,18 @@ describe('Model', () => {
           { login: 'lcarter', young: 0 },
           { login: 'pmoore', young: 0 },
           { login: 'rjohnson', young: 1 },
+        ]);
+      });
+
+      it('floor', async () => {
+        const rows = await Person.findAll({
+          select: { gender: 'gender', age: sql.floor(sql.avg(sql.field('age'))) },
+          group: 'gender',
+          order: sql.desc(sql.count(sql.field('id'))),
+        });
+        rows.should.be.eql([
+          { gender: 'M', age: 32 },
+          { gender: 'W', age: 45 },
         ]);
       });
     });
