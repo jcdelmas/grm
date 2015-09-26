@@ -1,6 +1,4 @@
 
-import should from 'should';
-
 import Groom, { sql } from '../index.js';
 
 const groom = new Groom({
