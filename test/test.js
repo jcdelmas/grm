@@ -1,5 +1,6 @@
 
 import 'should';
+import _ from 'lodash';
 
 import Groom, { sql } from '../index.js';
 
@@ -30,6 +31,19 @@ const Person = groom.define('Person', {
       order: 'position',
     },
   },
+  virtualFields: {
+    emailService: {
+      getter() {
+        return this.email.match(/[^@]+@([^\.]+)\..+/)[1];
+      },
+    },
+    favoriteMovieName: {
+      dependsOn: { favoriteMovies: true },
+      getter() {
+        return this.favoriteMovies[0].name;
+      },
+    },
+  },
 });
 
 const City = groom.define('City', {
@@ -42,7 +56,7 @@ const City = groom.define('City', {
     inhabitants: {
       model: 'Person',
       mappedBy: 'city',
-    }
+    },
   },
 });
 
@@ -203,9 +217,9 @@ describe('Model', () => {
   describe('#findAll', () => {
     it('should return all rows from table', async () => {
       const rows = await Person.findAll();
-      rows.should.be.eql(data.persons.map(([id, firstname, lastname, login, email, gender, age, cityId]) => {
-        return { id, firstname, lastname, login, email, gender, age, city: { id: cityId } };
-      }));
+      rows.map(({ id, firstname, lastname, login, email, gender, age, city }) => {
+        return [id, firstname, lastname, login, email, gender, age, city.id];
+      }).should.be.eql(data.persons);
     });
 
     describe('includes', () => {
@@ -553,6 +567,32 @@ describe('Model', () => {
         rows.should.be.eql([
           { gender: 'M', age: 32 },
           { gender: 'W', age: 45 },
+        ]);
+      });
+    });
+
+    describe('virtual fields', () => {
+      it('simple', async () => {
+        const rows = await Person.findAll({
+          where: { age: { $lt: 30 } },
+          order: 'age',
+        });
+        rows.map(({ login, emailService }) => [ login, emailService ]).should.be.eql([
+          ['rjohnson', 'gmail'],
+          ['jdoe', 'msn'],
+          ['jbrown', 'gmail'],
+        ]);
+      });
+      it('with dependency', async () => {
+        const rows = await Person.findAll({
+          includes: { favoriteMovieName: true },
+          where: { age: { $gt: 30 } },
+          order: 'age',
+        });
+        rows.map(({ login, favoriteMovieName }) => [ login, favoriteMovieName ]).should.be.eql([
+          ['lcarter', 'Pulp Fiction'],
+          ['pmoore', 'Star Wars'],
+          ['bsmith', 'The Lord of the Rings'],
         ]);
       });
     });
