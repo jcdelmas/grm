@@ -32,13 +32,17 @@ const Person = groom.define('Person', {
   },
 });
 
-groom.define('City', {
+const City = groom.define('City', {
   fields: {
     id: {},
     name: {},
   },
   relations: {
     state: { model: 'State' },
+    inhabitants: {
+      model: 'Person',
+      mappedBy: 'city',
+    }
   },
 });
 
@@ -253,6 +257,21 @@ describe('Model', () => {
           ['pmoore', [ 'Star Wars', 'The Godfather' ] ],
         ]);
       });
+
+      it('two steps include', async () => {
+        const rows = await Person.findAll({
+          includes: { city: { state: true } },
+          order: 'login',
+        });
+        rows.map(({ login, city }) => [ login, city.name, city.state.name ]).should.be.eql([
+          ['bsmith', 'San Francisco', 'California' ],
+          ['jbrown', 'New-York', 'New-York' ],
+          ['jdoe', 'New-York', 'New-York' ],
+          ['lcarter', 'New-York', 'New-York' ],
+          ['pmoore', 'Los Angeles', 'California' ],
+          ['rjohnson', 'Los Angeles', 'California' ],
+        ]);
+      });
     });
 
     describe('sort', () => {
@@ -393,6 +412,19 @@ describe('Model', () => {
         rows.map(r => r.login).should.be.eql([
           'jdoe',
           'lcarter',
+        ]);
+      });
+
+      it('on indirect relation', async () => {
+        const rows = await City.findAll({
+          where: {
+            'inhabitants.favoriteMovies.name': 'Star Wars',
+          },
+          order: 'name',
+        });
+        rows.should.be.eql([
+          { id: 3, name: 'Los Angeles', state: { id: 2 } },
+          { id: 1, name: 'New-York', state: { id: 1 } },
         ]);
       });
     });
