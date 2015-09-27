@@ -66,9 +66,13 @@ const data = {
       [6, 'John',     'Brown',   'jbrown',   'john.brown@gmail.com',      'M', 28, 1],
   ],
   cities: [
-    [1, 'New-York'],
-    [2, 'San Francisco'],
-    [3, 'Seattle'],
+    [1, 'New-York', 1],
+    [2, 'San Francisco', 2],
+    [3, 'Los Angeles', 2],
+  ],
+  states: [
+    [1, 'New York'],
+    [2, 'California'],
   ],
   movies: [
     [1, 'The Godfather'],
@@ -106,6 +110,7 @@ function values(items) {
 before(async () => {
   await client.query(`DROP TABLE IF EXISTS person`);
   await client.query(`DROP TABLE IF EXISTS city`);
+  await client.query(`DROP TABLE IF EXISTS state`);
   await client.query(`DROP TABLE IF EXISTS movie`);
   await client.query(`DROP TABLE IF EXISTS favorite_movie`);
   await client.query(`
@@ -123,6 +128,14 @@ before(async () => {
   `);
   await client.query(`
     CREATE TABLE city (
+      id int(11) UNIQUE NOT NULL,
+      name varchar(50) NOT NULL,
+      state_id int(11) NOT NULL,
+      PRIMARY KEY (id)
+    )
+  `);
+  await client.query(`
+    CREATE TABLE state (
       id int(11) UNIQUE NOT NULL,
       name varchar(50) NOT NULL,
       PRIMARY KEY (id)
@@ -148,7 +161,11 @@ before(async () => {
     VALUES ${values(data.persons)}
   `);
   await client.query(`
-    INSERT INTO city (id, name)
+    INSERT INTO state (id, name)
+    VALUES ${values(data.states)}
+  `);
+  await client.query(`
+    INSERT INTO city (id, name, state_id)
     VALUES ${values(data.cities)}
   `);
   await client.query(`
@@ -178,7 +195,7 @@ describe('Model', () => {
           order: 'age',
         });
         rows.map(({ login, city }) => ([ login, city.name ])).should.be.eql([
-          ['rjohnson', 'Seattle' ],
+          ['rjohnson', 'Los Angeles' ],
           ['jdoe', 'New-York' ],
           ['jbrown', 'New-York' ],
         ]);
@@ -431,7 +448,7 @@ describe('Model', () => {
         });
         rows.should.be.eql([
           { city: 'New-York', count: 3 },
-          { city: 'Seattle', count: 2 },
+          { city: 'Los Angeles', count: 2 },
           { city: 'San Francisco', count: 1 },
         ]);
       });
