@@ -37,6 +37,23 @@ groom.define('City', {
     id: {},
     name: {},
   },
+  relations: {
+    state: { model: 'State' },
+  },
+});
+
+const State = groom.define('State', {
+  fields: {
+    id: {},
+    name: {},
+  },
+  relations: {
+    cities: {
+      model: 'City',
+      mappedBy: 'state',
+      order: 'name',
+    },
+  },
 });
 
 groom.define('Movie', {
@@ -71,7 +88,7 @@ const data = {
     [3, 'Los Angeles', 2],
   ],
   states: [
-    [1, 'New York'],
+    [1, 'New-York'],
     [2, 'California'],
   ],
   movies: [
@@ -211,6 +228,17 @@ describe('Model', () => {
           ['lcarter', [ 'Pulp Fiction', 'The Green Mile', 'The Godfather' ] ],
           ['pmoore', [ 'Star Wars', 'The Godfather' ] ],
           ['bsmith', [ 'The Lord of the Rings' ] ],
+        ]);
+      });
+
+      it('one-to-many', async () => {
+        const rows = await State.findAll({
+          includes: { cities: true },
+          order: 'name',
+        });
+        rows.map(({ name, cities }) => ([ name, cities.map(m => m.name) ])).should.be.eql([
+          ['California', [ 'Los Angeles', 'San Francisco' ] ],
+          ['New-York', [ 'New-York' ] ],
         ]);
       });
 
