@@ -1,5 +1,5 @@
 {
-  "name": "groomjs",
+  "name": "grmjs",
   "version": "0.1.0",
   "description": "ORM for Node.js",
   "main": "index.js",

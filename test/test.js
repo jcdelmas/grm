@@ -2,18 +2,18 @@
 import 'should';
 import _ from 'lodash';
 
-import Groom, { sql } from '../index.js';
+import Grm, { sql } from '../index.js';
 
-const groom = new Groom({
+const grm = new Grm({
   user: 'root',
   password: 'root',
-  database: 'groom',
+  database: 'grm',
   logging: false,
 });
 
-const client = groom.client;
+const client = grm.client;
 
-const Person = groom.define('Person', {
+const Person = grm.define('Person', {
   fields: {
     id: {},
     firstname: {},
@@ -46,7 +46,7 @@ const Person = groom.define('Person', {
   },
 });
 
-const City = groom.define('City', {
+const City = grm.define('City', {
   fields: {
     id: {},
     name: {},
@@ -60,7 +60,7 @@ const City = groom.define('City', {
   },
 });
 
-const State = groom.define('State', {
+const State = grm.define('State', {
   fields: {
     id: {},
     name: {},
@@ -74,14 +74,14 @@ const State = groom.define('State', {
   },
 });
 
-groom.define('Movie', {
+grm.define('Movie', {
   fields: {
     id: {},
     name: {},
   },
 });
 
-groom.define('FavoriteMovie', {
+grm.define('FavoriteMovie', {
   fields: {
     position: {},
   },
