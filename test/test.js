@@ -1,7 +1,7 @@
 
 import 'should';
 
-import Grm, { sql } from '../lib/index.js';
+import Grm, { sql } from '../src/index.js';
 
 const grm = new Grm({
   user: 'root',

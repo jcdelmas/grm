@@ -8,11 +8,11 @@
   },
   "scripts": {
     "clean": "rimraf lib",
-    "prebuild": "npm run lint && npm run clean",
-    "build": "babel src --out-dir lib",
-    "pretest": "npm run build",
+    "lint": "eslint src test",
     "test": "mocha --compilers js:babel/register",
-    "lint": "eslint src test"
+    "check": "npm run lint && npm run test",
+    "prebuild": "npm run clean && npm run check",
+    "build": "babel src --out-dir lib"
   },
   "keywords": [
     "ORM",
