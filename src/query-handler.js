@@ -494,7 +494,7 @@ const Normalizer = {
    * @param predicates
    * @param {string} operator
    * @param {object} context
-   * @return {Predicate}
+   * @return {Predicate|null}
    */
   composition(predicates, operator, context) {
     const normalizedPredicates = this.predicates(predicates, context);
@@ -513,7 +513,7 @@ const Normalizer = {
     } else if (normalizedPredicates.length === 1) {
       return normalizedPredicates[0];
     } else {
-      throw new Error('Empty composition');
+      return null;
     }
   },
 
@@ -538,9 +538,9 @@ const Normalizer = {
    */
   predicates(predicates, context) {
     if (_.isArray(predicates)) {
-      return predicates.map(predicate => this.predicate(predicate, context));
+      return predicates.map(predicate => this.predicate(predicate, context)).filter(_.identity);
     } else if (_.isPlainObject(predicates)) {
-      return _.map(predicates, (value, key) => this.predicateWithKey(value, key, context));
+      return _.map(predicates, (value, key) => this.predicateWithKey(value, key, context)).filter(_.identity);
     } else {
       throw new Error('Invalid predicates format: ' + predicates);
     }
@@ -550,7 +550,7 @@ const Normalizer = {
    * @param value
    * @param {string} key
    * @param {object} context
-   * @return {Predicate}
+   * @return {Predicate|null}
    */
   predicateWithKey(value, key, context) {
     if (LOGICAL_OPERATORS[key]) {
@@ -575,7 +575,7 @@ const Normalizer = {
   /**
    * @param value
    * @param {object} context
-   * @return {Predicate}
+   * @return {Predicate|null}
    */
   predicate(value, context) {
     if (_.isArray(value)) {

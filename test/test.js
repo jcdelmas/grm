@@ -440,6 +440,25 @@ describe('Model', () => {
           { id: 1, name: 'New-York', state: { id: 1 } },
         ]);
       });
+
+      it('ignore empty filters', async () => {
+        const rows = await Person.findAll({
+          where: [
+            {
+              age: { $gt: 30 },
+              lastname: {},
+              email: [],
+            },
+            {},
+            [],
+          ],
+        });
+        rows.map(r => r.login).should.be.eql([
+          'bsmith',
+          'lcarter',
+          'pmoore',
+        ]);
+      });
     });
 
     describe('select', () => {
