@@ -163,10 +163,8 @@ class Scope {
    * @param {QueryHandler} queryHandler
    * @param {Model} model
    * @param {object} includes
-   * @param {Scope|null} parent
-   * @param {string|null} fieldName
    */
-  constructor(queryHandler, model, includes, parent = null, fieldName = '') {
+  constructor(queryHandler, model, includes) {
     this.orm = queryHandler.orm;
     this.queryHandler = queryHandler;
     this.model = model;
@@ -285,7 +283,7 @@ class Scope {
       if (this.model.relations[fieldName]) {
         const relation = this.model.relations[fieldName];
         const relationModel = this.orm.registry.get(relation.model);
-        const scope = new Scope(this.queryHandler, relationModel, includes, this, fieldName);
+        const scope = new Scope(this.queryHandler, relationModel, includes);
 
         if (relation.isCollection) {
           this.queryHandler.distinctRows = true;
@@ -339,7 +337,7 @@ class Scope {
   }
 
   parseRow(row) {
-    const result = _.mapValues(this.fetchedFields, ({ alias, transform }, fieldName) => {
+    const result = _.mapValues(this.fetchedFields, ({ alias, transform }) => {
       return transform(row[alias]);
     });
     const relations = _.mapValues(this.getFetchedChildren(), child => child.parseRow(row));

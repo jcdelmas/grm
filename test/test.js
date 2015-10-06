@@ -1,8 +1,7 @@
 
 import 'should';
-import _ from 'lodash';
 
-import Grm, { sql } from '../index.js';
+import Grm, { sql } from '../lib/index.js';
 
 const grm = new Grm({
   user: 'root',
@@ -139,7 +138,7 @@ const data = {
 };
 
 function values(items) {
-  return items.map(fields => '(' + fields.map(client.escape).join(', ') + ')').join(', ')
+  return items.map(fields => '(' + fields.map(client.escape).join(', ') + ')').join(', ');
 }
 
 before(async () => {
