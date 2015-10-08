@@ -7,7 +7,7 @@ const grm = new Grm({
   user: 'root',
   password: 'root',
   database: 'grm',
-  logging: false,
+  logging: true,
 });
 
 const client = grm.client;
@@ -281,7 +281,7 @@ describe('Model', () => {
         ]);
       });
 
-      it('two steps include', async () => {
+      it('indirect relation include', async () => {
         const rows = await Person.findAll({
           includes: { city: { state: true } },
           order: 'login',
@@ -293,6 +293,25 @@ describe('Model', () => {
           ['lcarter', 'New-York', 'New-York' ],
           ['pmoore', 'Los Angeles', 'California' ],
           ['rjohnson', 'Los Angeles', 'California' ],
+        ]);
+      });
+
+      it('without default fields', async () => {
+        const rows = await Person.findAll({
+          includes: {
+            id: true,
+            login: true,
+            $defaults: false,
+          },
+          order: 'id',
+        });
+        rows.should.be.eql([
+          { id: 1, login: 'jdoe' },
+          { id: 2, login: 'bsmith' },
+          { id: 3, login: 'lcarter' },
+          { id: 4, login: 'rjohnson' },
+          { id: 5, login: 'pmoore' },
+          { id: 6, login: 'jbrown' },
         ]);
       });
     });

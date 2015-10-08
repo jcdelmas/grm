@@ -185,14 +185,20 @@ class Scope {
         .reduce(this.mergeIncludes, _.cloneDeep(baseIncludes)) :
       {};
 
-    this.fetchedFields = _.mapValues(this.model.fields, fieldCfg => {
-      const fieldAlias = this.queryHandler.nextAlias();
-      return {
-        alias: fieldAlias,
-        transform: fieldCfg.getter || _.identity,
-        column: fieldCfg.column,
-      };
-    });
+    if (!includes.hasOwnProperty('$defaults')) {
+      includes.$defaults = true;
+    }
+
+    this.fetchedFields = _(this.model.fields)
+      .pick((cfg, fieldName) => includes.$defaults || includes[fieldName])
+      .mapValues(fieldCfg => {
+        const fieldAlias = this.queryHandler.nextAlias();
+        return {
+          alias: fieldAlias,
+          transform: fieldCfg.getter || _.identity,
+          column: fieldCfg.column,
+        };
+      }).value();
 
     _.forEach(this.model.relations, (relation, fieldName) => {
       if (includes[fieldName]) {
@@ -201,7 +207,7 @@ class Scope {
         } else {
           this.subsequentFetches[fieldName] = includes[fieldName];
         }
-      } else if (relation.foreignKey) {
+      } else if (relation.foreignKey && includes.$defaults) {
         const fieldAlias = this.queryHandler.nextAlias();
         this.fetchedFields[fieldName] = {
           alias: fieldAlias,
@@ -212,7 +218,7 @@ class Scope {
     });
 
     this.virtualFields = _(this.model.virtualFields)
-      .pick((cfg, fieldName) => cfg.include || includes[fieldName])
+      .pick((cfg, fieldName) => (cfg.include && includes.$defaults) || includes[fieldName])
       .keys()
       .value();
   }
