@@ -231,7 +231,7 @@ class Scope {
         const fieldAlias = this.queryHandler.nextAlias();
         this.fetchedFields[fieldName] = {
           alias: fieldAlias,
-          transform: this.model.fields[fieldName].getter || _.identity,
+          transform: fieldCfg.getter || _.identity,
         };
         return `${this.alias}.${escapeId(fieldCfg.column)} AS ${fieldAlias}`;
       }),
