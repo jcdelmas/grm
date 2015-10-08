@@ -7,7 +7,7 @@ const grm = new Grm({
   user: 'root',
   password: 'root',
   database: 'grm',
-  logging: true,
+  logging: false,
 });
 
 const client = grm.client;
