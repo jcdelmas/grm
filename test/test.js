@@ -34,8 +34,8 @@ const Person = grm.define('Person', {
       through: 'FavoriteMovie',
       order: 'position',
       where: {
-        year: { $lt: 1990 }
-      }
+        year: { $lt: 1990 },
+      },
     },
   },
   virtualFields: {
