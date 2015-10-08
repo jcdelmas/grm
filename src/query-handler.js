@@ -49,7 +49,7 @@ class QueryHandler {
 
     const orderPart = this.query.order ? this.parser.parseOrder(this.query.order) : null;
 
-    const groupPart = this.query.group ? this.parser.parsegroup(this.query.group) : null;
+    const groupPart = this.query.group ? this.parser.parseGroup(this.query.group) : null;
 
     const havingPart = this.query.having ? this.parser.parseFilter(this.query.having) : null;
 
@@ -414,7 +414,7 @@ class Parser {
     }).join(', ');
   }
 
-  parsegroup(input) {
+  parseGroup(input) {
     return Normalizer.group(input).map(expr => this.expression(expr)).join(', ');
   }
 
