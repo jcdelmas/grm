@@ -172,37 +172,49 @@ class Scope {
     this.alias = queryHandler.nextAlias();
     this.children = {};
     this.subsequentFetches = {};
-    this.fetchedFields = {};
-    this.virtualFields = _(this.model.virtualFields).pick(cfg => cfg.include).keys().value();
     this.tableReference = `${escapeId(this.model.tableName)} AS ${this.alias}`;
 
     this.readIncludes(includes);
   }
 
-  readIncludes(includes) {
-    if (_.isPlainObject(includes)) {
-      const fullIncludes = _(this.model.virtualFields)
-        .filter((cfg, field) => includes[field])
+  readIncludes(baseIncludes) {
+    const includes = _.isPlainObject(baseIncludes) ?
+      _(this.model.virtualFields)
+        .filter((cfg, field) => baseIncludes[field])
         .map('dependsOn')
-        .reduce(this.mergeIncludes, _.cloneDeep(includes));
+        .reduce(this.mergeIncludes, _.cloneDeep(baseIncludes)) :
+      {};
 
-      _.forEach(fullIncludes, (fieldIncludes, fieldName) => {
-        if (fieldIncludes) {
-          if (this.model.relations[fieldName]) {
-            const relation = this.model.relations[fieldName];
-            if (!relation.isCollection) {
-              this.resolveScope(fieldName, true, fieldIncludes);
-            } else {
-              this.subsequentFetches[fieldName] = fieldIncludes;
-            }
-          } else if (this.model.virtualFields[fieldName]) {
-            this.virtualFields.push(fieldName);
-          } else {
-            throw new Error(`Unknown field [${fieldName}] for model [${this.model.name}]`);
-          }
+    this.fetchedFields = _.mapValues(this.model.fields, fieldCfg => {
+      const fieldAlias = this.queryHandler.nextAlias();
+      return {
+        alias: fieldAlias,
+        transform: fieldCfg.getter || _.identity,
+        column: fieldCfg.column,
+      };
+    });
+
+    _.forEach(this.model.relations, (relation, fieldName) => {
+      if (includes[fieldName]) {
+        if (!relation.isCollection) {
+          this.resolveScope(fieldName, true, includes[fieldName]);
+        } else {
+          this.subsequentFetches[fieldName] = includes[fieldName];
         }
-      });
-    }
+      } else if (relation.foreignKey) {
+        const fieldAlias = this.queryHandler.nextAlias();
+        this.fetchedFields[fieldName] = {
+          alias: fieldAlias,
+          transform: id => ({ id }),
+          column: relation.foreignKey,
+        };
+      }
+    });
+
+    this.virtualFields = _(this.model.virtualFields)
+      .pick((cfg, fieldName) => cfg.include || includes[fieldName])
+      .keys()
+      .value();
   }
 
   mergeIncludes(target, source) {
@@ -227,26 +239,7 @@ class Scope {
 
   resolveSelect() {
     return [
-      ..._.map(this.model.fields, (fieldCfg, fieldName) => {
-        const fieldAlias = this.queryHandler.nextAlias();
-        this.fetchedFields[fieldName] = {
-          alias: fieldAlias,
-          transform: fieldCfg.getter || _.identity,
-        };
-        return `${this.alias}.${escapeId(fieldCfg.column)} AS ${fieldAlias}`;
-      }),
-      ..._(this.model.relations)
-        .pick((relation, fieldName) => {
-          return (!this.children[fieldName] || !this.children[fieldName].fetched) && relation.foreignKey;
-        })
-        .map((relation, fieldName) => {
-          const fieldAlias = this.queryHandler.nextAlias();
-          this.fetchedFields[fieldName] = {
-            alias: fieldAlias,
-            transform: id => ({ id }),
-          };
-          return `${this.alias}.${escapeId(relation.foreignKey)} AS ${fieldAlias}`;
-        }).value(),
+      ..._.map(this.fetchedFields, field => `${this.alias}.${escapeId(field.column)} AS ${field.alias}`),
       ..._(this.getFetchedChildren()).map(child => child.resolveSelect()).flatten().value(),
     ];
   }
