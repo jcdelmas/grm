@@ -29,6 +29,14 @@ const Person = grm.define('Person', {
       through: 'FavoriteMovie',
       order: 'position',
     },
+    favoriteOldMovies: {
+      model: 'Movie',
+      through: 'FavoriteMovie',
+      order: 'position',
+      where: {
+        year: { $lt: 1990 }
+      }
+    },
   },
   virtualFields: {
     emailService: {
@@ -109,14 +117,14 @@ const data = {
     [2, 'California'],
   ],
   movies: [
-    [1, 'The Godfather'],
-    [2, 'Pulp Fiction'],
-    [3, 'The Good, the Bad and the Ugly'],
-    [4, 'Forrest Gump'],
-    [5, 'The Lord of the Rings'],
-    [6, 'Star Wars'],
-    [7, 'Usual Suspects'],
-    [8, 'The Green Mile'],
+    [1, 'The Godfather', 1972],
+    [2, 'Pulp Fiction', 1994],
+    [3, 'The Good, the Bad and the Ugly', 1966],
+    [4, 'Forrest Gump', 1994],
+    [5, 'The Lord of the Rings', 2001],
+    [6, 'Star Wars', 1977],
+    [7, 'Usual Suspects', 1995],
+    [8, 'The Green Mile', 1999],
   ],
   favoriteMovies: [
     [1, 2, 1],
@@ -179,6 +187,7 @@ before(async () => {
     CREATE TABLE movie (
       id int(11) UNIQUE NOT NULL,
       name varchar(50) NOT NULL,
+      year int(4) NOT NULL,
       PRIMARY KEY (id)
     )
   `);
@@ -187,6 +196,7 @@ before(async () => {
       person_id int(11) NOT NULL,
       movie_id int(11) NOT NULL,
       position int(11) NOT NULL,
+      hidden tinyint(1) NOT NULL DEFAULT 0,
       PRIMARY KEY (person_id, movie_id)
     )
   `);
@@ -203,7 +213,7 @@ before(async () => {
     VALUES ${values(data.cities)}
   `);
   await client.query(`
-    INSERT INTO movie (id, name)
+    INSERT INTO movie (id, name, year)
     VALUES ${values(data.movies)}
   `);
   await client.query(`
