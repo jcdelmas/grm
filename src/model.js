@@ -102,10 +102,16 @@ export default class Model {
     return cfg;
   };
 
-  _computeVirtualFieldCfg = (baseCfg) => {
+  _computeVirtualFieldCfg = (baseCfg, fieldName) => {
+    if (!baseCfg.hasOwnProperty('getter')) {
+      throw new Error(`Virtual field [${fieldName}] of model [${this.name}] has no 'getter' property`);
+    }
+    if (typeof baseCfg.getter !== 'function') {
+      throw new Error(`Getter property of virtual field [${fieldName}] in model [${this.name}] is not a function`);
+    }
     const cfg = _.clone(baseCfg);
     if (!cfg.hasOwnProperty('include')) {
-      cfg.include = !cfg.dependsOn || Object.keys(cfg.dependsOn).every(fieldName => this.fields[fieldName]);
+      cfg.include = !cfg.dependsOn || Object.keys(cfg.dependsOn).every(f => this.fields[f]);
     }
     return cfg;
   };
