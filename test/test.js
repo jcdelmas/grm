@@ -40,6 +40,7 @@ const Person = grm.define('Person', {
   },
   virtualFields: {
     emailService: {
+      dependsOn: { email: true },
       getter() {
         return this.email.match(/[^@]+@([^\.]+)\..+/)[1];
       },
@@ -312,6 +313,26 @@ describe('Model', () => {
           { id: 4, login: 'rjohnson' },
           { id: 5, login: 'pmoore' },
           { id: 6, login: 'jbrown' },
+        ]);
+      });
+
+      it('including virtual fields without defaults', async () => {
+        const rows = await Person.findAll({
+          includes: {
+            id: true,
+            login: true,
+            emailService: true,
+            $defaults: false,
+          },
+          order: 'id',
+        });
+        rows.should.be.eql([
+          { id: 1, login: 'jdoe', emailService: 'msn', email: 'john.doe@msn.com' },
+          { id: 2, login: 'bsmith', emailService: 'yahoo', email: 'brad.smith@yahoo.com' },
+          { id: 3, login: 'lcarter', emailService: 'hotmail', email: 'lauren.carter@hotmail.com' },
+          { id: 4, login: 'rjohnson', emailService: 'gmail', email: 'robert.johnson@gmail.com' },
+          { id: 5, login: 'pmoore', emailService: 'gmail', email: 'patricia.moore@gmail.com' },
+          { id: 6, login: 'jbrown', emailService: 'gmail', email: 'john.brown@gmail.com' },
         ]);
       });
     });
