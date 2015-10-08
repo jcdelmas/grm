@@ -58,6 +58,7 @@ class QueryHandler {
     qb.push(this.resolveSelect());
     qb.push(' FROM ');
     qb.push(this.rootScope.tableReference);
+    // Resolve joins must be call after
     this.rootScope.resolveJoins().forEach(join => qb.push(join));
 
     if (wherePart) {
