@@ -105,7 +105,7 @@ export default class Model {
   _computeVirtualFieldCfg = (baseCfg) => {
     const cfg = _.clone(baseCfg);
     if (!cfg.hasOwnProperty('include')) {
-      cfg.include = !cfg.dependsOn;
+      cfg.include = !cfg.dependsOn || Object.keys(cfg.dependsOn).every(fieldName => this.fields[fieldName]);
     }
     return cfg;
   };
