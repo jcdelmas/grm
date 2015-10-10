@@ -102,7 +102,7 @@ class QueryHandler {
       if (this.hasModelResult()) {
         return this.rootScope.resolveSubsequentFetches(rows).then(() => {
           rows.forEach(row => this.rootScope.resolveVirtualFields(row));
-          return rows;
+          return rows.map(this.refineRow);
         });
       } else {
         return rows;
@@ -157,6 +157,29 @@ class QueryHandler {
 
   hasModelResult() {
     return !this.query.count && !this.query.select;
+  }
+
+  refineRow = (row) => {
+    return this.refineR(row, this.includes);
+  }
+
+  /**
+   *
+   * @param {object} obj
+   * @param {object} includes
+   */
+  refineR(obj, includes) {
+    if (_.isPlainObject(obj)) {
+      return _.mapValues(includes, (fieldInc, fieldName) => {
+        if (_.isPlainObject(fieldInc)) {
+          return this.refineR(obj[fieldName], fieldInc);
+        } else {
+          return obj[fieldName];
+        }
+      });
+    } else if (_.isArray(obj)) {
+      return obj.map(v => this.refineR(v, includes));
+    }
   }
 }
 

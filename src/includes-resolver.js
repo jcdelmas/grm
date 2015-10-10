@@ -17,7 +17,7 @@ export default class IncludesResolver {
   resolve(model, userIncludes, includeDefaults = true) {
     if (_.isPlainObject(userIncludes)) {
       const relationsIncludes = _(userIncludes)
-        .pick((cfg, fieldName) => model.relations[fieldName])
+        .pick((cfg, fieldName) => cfg && model.relations[fieldName])
         .mapValues((cfg, fieldName) => {
           const relationModel = this.grm.registry.get(model.relations[fieldName].model);
           return this.resolve(relationModel, cfg, includeDefaults);
@@ -57,17 +57,15 @@ export default class IncludesResolver {
   }
 
   _mergeIncludes(target, source) {
-    return {
+    return _.pick({
       ...target,
       ..._.mapValues(source, (value, key) => {
-        if (!target[key] || target[key] === true) {
-          return source[key];
-        } else if (_.isObject(source[key])) {
+        if (_.isObject(target[key]) && _.isObject(source[key])) {
           return this._mergeIncludes(target[key], source[key]);
         } else {
-          return target[key];
+          return source[key];
         }
-      })
-    }
+      }),
+    }, _.identity);
   }
 }

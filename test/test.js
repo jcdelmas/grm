@@ -327,12 +327,34 @@ describe('Model', () => {
           order: 'id',
         });
         rows.should.be.eql([
-          { id: 1, login: 'jdoe', emailService: 'msn', email: 'john.doe@msn.com' },
-          { id: 2, login: 'bsmith', emailService: 'yahoo', email: 'brad.smith@yahoo.com' },
-          { id: 3, login: 'lcarter', emailService: 'hotmail', email: 'lauren.carter@hotmail.com' },
-          { id: 4, login: 'rjohnson', emailService: 'gmail', email: 'robert.johnson@gmail.com' },
-          { id: 5, login: 'pmoore', emailService: 'gmail', email: 'patricia.moore@gmail.com' },
-          { id: 6, login: 'jbrown', emailService: 'gmail', email: 'john.brown@gmail.com' },
+          { id: 1, login: 'jdoe', emailService: 'msn' },
+          { id: 2, login: 'bsmith', emailService: 'yahoo' },
+          { id: 3, login: 'lcarter', emailService: 'hotmail' },
+          { id: 4, login: 'rjohnson', emailService: 'gmail' },
+          { id: 5, login: 'pmoore', emailService: 'gmail' },
+          { id: 6, login: 'jbrown', emailService: 'gmail' },
+        ]);
+      });
+
+      it('fields exclusion', async () => {
+        const rows = await Person.findAll({
+          includes: {
+            firstname: false,
+            lastname: false,
+            email: false,
+            gender: false,
+            age: false,
+            city: false,
+          },
+          order: 'id',
+        });
+        rows.should.be.eql([
+          { id: 1, login: 'jdoe', emailService: 'msn' },
+          { id: 2, login: 'bsmith', emailService: 'yahoo' },
+          { id: 3, login: 'lcarter', emailService: 'hotmail' },
+          { id: 4, login: 'rjohnson', emailService: 'gmail' },
+          { id: 5, login: 'pmoore', emailService: 'gmail' },
+          { id: 6, login: 'jbrown', emailService: 'gmail' },
         ]);
       });
     });
