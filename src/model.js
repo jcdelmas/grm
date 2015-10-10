@@ -18,6 +18,8 @@ export default class Model {
     this.relations = this.cfg.relations ? _.mapValues(this.cfg.relations, this._computeRelationCfg) : {};
     this.virtualFields = this.cfg.virtualFields ? _.mapValues(this.cfg.virtualFields, this._computeVirtualFieldCfg) : {};
 
+    this.defaultIncludes = this._resolveDefaultIncludes();
+
     this._resolvers = {};
   }
 
@@ -125,6 +127,14 @@ export default class Model {
       this._resolvers[fieldName] = createResolver(this, fieldName, relation);
     }
     return this._resolvers[fieldName];
+  }
+
+  _resolveDefaultIncludes() {
+    return {
+      ..._.mapValues(this.fields, f => true),
+      ..._(this.relations).pick(r => r.foreignKey).mapValues(r => ({id: true})).value(),
+      ..._(this.virtualFields).pick(cfg => cfg.include).mapValues(f => true).value(),
+    };
   }
 }
 

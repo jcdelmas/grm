@@ -5,6 +5,7 @@ import Model from './model';
 import Client from './client';
 import Registry from './registry';
 import queryHandlerFactory from './query-handler';
+import IncludesResolver from './includes-resolver';
 
 const DEFAULT_CONFIG = {
   host: 'localhost',
@@ -17,6 +18,7 @@ export default class Grm {
     this.registry = new Registry();
     this.client = new Client(config);
     this.query = queryHandlerFactory(this);
+    this.includesResolver = new IncludesResolver(this);
   }
 
   define(name, config) {

@@ -25,7 +25,7 @@ export default (orm) => (model, query) => {
 
 class QueryHandler {
   /**
-   * @param {Orm} orm
+   * @param {Grm} orm
    * @param {Model} model
    * @param {object} query
    */
@@ -37,7 +37,8 @@ class QueryHandler {
     this.fields = {};
     this.aliasCounter = 0;
 
-    this.rootScope = new Scope(this, model, query.includes || true);
+    this.includes = this.orm.includesResolver.resolve(this.model, query.includes || true);
+    this.rootScope = new Scope(this, model, this.includes);
 
     this.parser = new Parser(this);
 
@@ -178,19 +179,10 @@ class Scope {
   }
 
   readIncludes(baseIncludes) {
-    const includes = _.isPlainObject(baseIncludes) ?
-      _(this.model.virtualFields)
-        .filter((cfg, field) => baseIncludes[field])
-        .map('dependsOn')
-        .reduce(this.mergeIncludes, _.cloneDeep(baseIncludes)) :
-      {};
-
-    if (!includes.hasOwnProperty('$defaults')) {
-      includes.$defaults = true;
-    }
+    const includes = this.orm.includesResolver.mergeVirtualFieldsDependencies(this.model, baseIncludes);
 
     this.fetchedFields = _(this.model.fields)
-      .pick((cfg, fieldName) => includes.$defaults || includes[fieldName])
+      .pick((cfg, fieldName) => includes[fieldName])
       .mapValues(fieldCfg => {
         const fieldAlias = this.queryHandler.nextAlias();
         return {
@@ -200,25 +192,26 @@ class Scope {
         };
       }).value();
 
-    _.forEach(this.model.relations, (relation, fieldName) => {
-      if (includes[fieldName]) {
+    _(this.model.relations)
+      .pick((relation, fieldName) => includes[fieldName])
+      .forEach((relation, fieldName) => {
         if (!relation.isCollection) {
-          this.resolveScope(fieldName, true, includes[fieldName]);
+          if (relation.foreignKey && _.isEqual(includes[fieldName], { id: true })) {
+            this.fetchedFields[fieldName] = {
+              alias: this.queryHandler.nextAlias(),
+              transform: id => ({ id }),
+              column: relation.foreignKey,
+            };
+          } else {
+            this.resolveScope(fieldName, true, includes[fieldName]);
+          }
         } else {
           this.subsequentFetches[fieldName] = includes[fieldName];
         }
-      } else if (relation.foreignKey && includes.$defaults) {
-        const fieldAlias = this.queryHandler.nextAlias();
-        this.fetchedFields[fieldName] = {
-          alias: fieldAlias,
-          transform: id => ({ id }),
-          column: relation.foreignKey,
-        };
-      }
-    });
+    }).value();
 
     this.virtualFields = _(this.model.virtualFields)
-      .pick((cfg, fieldName) => (cfg.include && includes.$defaults) || includes[fieldName])
+      .pick((cfg, fieldName) => includes[fieldName])
       .keys()
       .value();
   }
