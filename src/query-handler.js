@@ -231,7 +231,7 @@ class Scope {
         } else {
           this.subsequentFetches[fieldName] = includes[fieldName];
         }
-    }).value();
+      }).value();
 
     this.virtualFields = _(this.model.virtualFields)
       .pick((cfg, fieldName) => includes[fieldName])

@@ -131,9 +131,9 @@ export default class Model {
 
   _resolveDefaultIncludes() {
     return {
-      ..._.mapValues(this.fields, f => true),
-      ..._(this.relations).pick(r => r.foreignKey).mapValues(r => ({id: true})).value(),
-      ..._(this.virtualFields).pick(cfg => cfg.include).mapValues(f => true).value(),
+      ..._.mapValues(this.fields, () => true),
+      ..._(this.relations).pick(r => r.foreignKey).mapValues(() => ({id: true})).value(),
+      ..._(this.virtualFields).pick(cfg => cfg.include).mapValues(() => true).value(),
     };
   }
 }
