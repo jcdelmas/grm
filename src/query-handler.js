@@ -161,7 +161,7 @@ class QueryHandler {
 
   refineRow = (row) => {
     return this.refineR(row, this.includes);
-  }
+  };
 
   /**
    *
