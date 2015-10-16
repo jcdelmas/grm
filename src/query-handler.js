@@ -38,7 +38,8 @@ class QueryHandler {
     this.aliasCounter = 0;
 
     this.includes = this.orm.includesResolver.resolve(this.model, query.includes || true);
-    this.rootScope = new Scope(this, model, this.includes);
+    this.rootScope = new Scope(this, model);
+    this.rootScope.includes(this.includes);
 
     this.parser = new Parser(this);
 
@@ -187,9 +188,8 @@ class Scope {
   /**
    * @param {QueryHandler} queryHandler
    * @param {Model} model
-   * @param {object} includes
    */
-  constructor(queryHandler, model, includes) {
+  constructor(queryHandler, model) {
     this.orm = queryHandler.orm;
     this.queryHandler = queryHandler;
     this.model = model;
@@ -198,15 +198,17 @@ class Scope {
     this.subsequentFetches = {};
     this.tableReference = `${escapeId(this.model.tableName)} AS ${this.alias}`;
 
-    this.readIncludes(includes);
-  }
-
-  readIncludes(baseIncludes) {
-    const includes = this.orm.includesResolver.mergeVirtualFieldsDependencies(this.model, baseIncludes);
+    this.isFetched = false;
 
     this.fetchedFields = {};
     this.virtualFields = [];
     this.subsequentFetches = {};
+  }
+
+  includes(baseIncludes) {
+    this.isFetched = true;
+
+    const includes = this.orm.includesResolver.mergeVirtualFieldsDependencies(this.model, baseIncludes);
 
     _.forEach(includes, (input, fieldName) => {
       if (this.model.fields[fieldName]) {
@@ -227,7 +229,7 @@ class Scope {
               column: relation.foreignKey,
             };
           } else {
-            this.resolveScope(fieldName, true, input);
+            this.resolveScope(fieldName).includes(input);
           }
         } else {
           this.subsequentFetches[fieldName] = input;
@@ -289,16 +291,14 @@ class Scope {
 
   /**
    * @param {string} fieldName
-   * @param {boolean} fetched
-   * @param {object|boolean} includes
    * @return {Scope}
    */
-  resolveScope(fieldName, fetched = false, includes = true) {
+  resolveScope(fieldName) {
     if (!this.children[fieldName]) {
       if (this.model.relations[fieldName]) {
         const relation = this.model.relations[fieldName];
         const relationModel = this.orm.registry.get(relation.model);
-        const scope = new Scope(this.queryHandler, relationModel, includes);
+        const scope = new Scope(this.queryHandler, relationModel);
 
         if (relation.isCollection) {
           this.queryHandler.distinctRows = true;
@@ -306,7 +306,6 @@ class Scope {
 
         this.children[fieldName] = {
           scope: scope,
-          fetched: fetched,
           joins: this.resolveRelationJoins(relation, scope),
         };
       } else {
@@ -379,7 +378,7 @@ class Scope {
   }
 
   getFetchedChildren() {
-    return _(this.children).pick(c => c.fetched).mapValues(c => c.scope).value();
+    return _(this.children).mapValues(c => c.scope).pick(s => s.isFetched).value();
   }
 }
 
