@@ -235,7 +235,7 @@ describe('Model', () => {
     describe('includes', () => {
       it('many-to-one', async () => {
         const rows = await Person.findAll({
-          includes: { city: true },
+          includes: [ 'city' ],
           where: { age: { $lt: 30 } },
           order: 'age',
         });
@@ -285,6 +285,21 @@ describe('Model', () => {
       it('indirect relation include', async () => {
         const rows = await Person.findAll({
           includes: { city: { state: true } },
+          order: 'login',
+        });
+        rows.map(({ login, city }) => [ login, city.name, city.state.name ]).should.be.eql([
+          ['bsmith', 'San Francisco', 'California' ],
+          ['jbrown', 'New-York', 'New-York' ],
+          ['jdoe', 'New-York', 'New-York' ],
+          ['lcarter', 'New-York', 'New-York' ],
+          ['pmoore', 'Los Angeles', 'California' ],
+          ['rjohnson', 'Los Angeles', 'California' ],
+        ]);
+      });
+
+      it('indirect relation include (with list includes)', async () => {
+        const rows = await Person.findAll({
+          includes: ['city.state'],
           order: 'login',
         });
         rows.map(({ login, city }) => [ login, city.name, city.state.name ]).should.be.eql([

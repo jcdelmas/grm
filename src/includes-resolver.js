@@ -33,6 +33,12 @@ export default class IncludesResolver {
       }
     } else if (userIncludes === true) {
       return model.defaultIncludes;
+    } else if (_.isArray(userIncludes)) {
+      const objectUserIncludes = userIncludes.reduce((acc, field) => {
+        const fieldObject = field.split('.').reduceRight((acc2, token) => ({ [token]: acc2 }), true);
+        return _.merge(acc, fieldObject);
+      }, {});
+      return this.resolve(model, objectUserIncludes, includeDefaults);
     } else {
       return {};
     }
