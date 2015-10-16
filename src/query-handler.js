@@ -224,7 +224,6 @@ class Scope {
       } else if (this.model.virtualFields[fieldName] && input === true) {
         this.virtualFields.push(fieldName);
       } else {
-        console.log(fieldName);
         this.fetchedFields[fieldName] = {
           alias: this.queryHandler.nextAlias(),
           expression: this.queryHandler.parser.parseSelect(input),
