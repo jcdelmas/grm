@@ -204,39 +204,38 @@ class Scope {
   readIncludes(baseIncludes) {
     const includes = this.orm.includesResolver.mergeVirtualFieldsDependencies(this.model, baseIncludes);
 
-    this.fetchedFields = _(this.model.fields)
-      .pick((cfg, fieldName) => includes[fieldName])
-      .mapValues(fieldCfg => {
+    this.fetchedFields = {};
+    this.virtualFields = [];
+    this.subsequentFetches = {};
+
+    _.forEach(includes, (input, fieldName) => {
+      if (this.model.fields[fieldName]) {
+        const fieldCfg = this.model.fields[fieldName];
         const fieldAlias = this.queryHandler.nextAlias();
-        return {
+        this.fetchedFields[fieldName] = {
           alias: fieldAlias,
           transform: fieldCfg.getter || _.identity,
           column: fieldCfg.column,
         };
-      }).value();
-
-    _(this.model.relations)
-      .pick((relation, fieldName) => includes[fieldName])
-      .forEach((relation, fieldName) => {
+      } else if (this.model.relations[fieldName]) {
+        const relation = this.model.relations[fieldName];
         if (!relation.isCollection) {
-          if (relation.foreignKey && _.isEqual(includes[fieldName], { id: true })) {
+          if (relation.foreignKey && _.isEqual(input, { id: true })) {
             this.fetchedFields[fieldName] = {
               alias: this.queryHandler.nextAlias(),
               transform: id => ({ id }),
               column: relation.foreignKey,
             };
           } else {
-            this.resolveScope(fieldName, true, includes[fieldName]);
+            this.resolveScope(fieldName, true, input);
           }
         } else {
-          this.subsequentFetches[fieldName] = includes[fieldName];
+          this.subsequentFetches[fieldName] = input;
         }
-      }).value();
-
-    this.virtualFields = _(this.model.virtualFields)
-      .pick((cfg, fieldName) => includes[fieldName])
-      .keys()
-      .value();
+      } else if (this.model.virtualFields[fieldName]) {
+        this.virtualFields.push(fieldName);
+      }
+    });
   }
 
   mergeIncludes(target, source) {
