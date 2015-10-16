@@ -246,6 +246,19 @@ describe('Model', () => {
         ]);
       });
 
+      it('many-to-one (with string)', async () => {
+        const rows = await Person.findAll({
+          includes: 'city',
+          where: { age: { $lt: 30 } },
+          order: 'age',
+        });
+        rows.map(({ login, city }) => ([ login, city.name ])).should.be.eql([
+          ['rjohnson', 'Los Angeles' ],
+          ['jdoe', 'New-York' ],
+          ['jbrown', 'New-York' ],
+        ]);
+      });
+
       it('many-to-many', async () => {
         const rows = await Person.findAll({
           includes: { favoriteMovies: true },

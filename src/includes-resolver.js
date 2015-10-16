@@ -39,6 +39,8 @@ export default class IncludesResolver {
         return _.merge(acc, fieldObject);
       }, {});
       return this.resolve(model, objectUserIncludes, includeDefaults);
+    } else if (_.isString(userIncludes)) {
+      return this.resolve(model, { [userIncludes]: true }, includeDefaults);
     } else {
       return {};
     }
