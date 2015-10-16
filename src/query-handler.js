@@ -36,17 +36,22 @@ class QueryHandler {
 
     this.fields = {};
     this.aliasCounter = 0;
-
-    this.includes = this.orm.includesResolver.resolve(this.model, query.includes || true);
-    this.rootScope = new Scope(this, model);
-    this.rootScope.includes(this.includes);
+    this.distinctRows = false;
 
     this.parser = new Parser(this);
 
-    this.distinctRows = false;
+    this.scalarResult = query.select && !_.isPlainObject(query.select) && !_.isArray(query.select);
+    this.includes = this.orm.includesResolver.resolve(
+      this.model,
+      !this.scalarResult ? (query.select || query.includes || true) : { value: query.select },
+      !query.select
+    );
+    this.rootScope = new Scope(this, model);
   }
 
   execute() {
+    this.rootScope.includes(this.includes);
+
     const wherePart = this.query.where ? this.parser.parseFilter(this.query.where) : null;
 
     const orderPart = this.query.order ? this.parser.parseOrder(this.query.order) : null;
@@ -118,10 +123,11 @@ class QueryHandler {
   }
 
   rowParser() {
-    if (this.query.count || this.query.select) {
-      return this.hasScalarResult() ? row => row.value : _.identity;
+    if (this.query.count) {
+      return row => row.value;
     } else {
-      return row => this.rootScope.parseRow(row);
+      const base = row => this.rootScope.parseRow(row);
+      return !this.scalarResult ? base : _.flow(base, row => row.value);
     }
   }
 
@@ -129,8 +135,6 @@ class QueryHandler {
     if (this.query.count) {
       const distinct = this.distinctRows ? 'DISTINCT ' : '';
       return `COUNT(${distinct}${this.resolveField('id')}) AS value`;
-    } else if (this.query.select) {
-      return this.parseSelect(this.query.select).join(', ');
     } else {
       return (this.distinctRows ? 'DISTINCT ' : '') + this.rootScope.resolveSelect().join(', ');
     }
@@ -140,24 +144,8 @@ class QueryHandler {
     return this.rootScope.resolveField(fieldName);
   }
 
-  parseSelect(select) {
-    if (_.isPlainObject(select)) {
-      return _.map(select, (value, key) => this.parser.parseSelect(value) + ` AS "${key}"`);
-    } else if (_.isArray(select)) {
-      return select.map(value => this.parser.parseSelect(value) + ` AS "${value}"`);
-    } else if (_.isString(select)) {
-      return [ this.parser.parseSelect(select) + ' AS value' ];
-    } else {
-      throw new Error(`Invalid select value [${select}]`);
-    }
-  }
-
-  hasScalarResult() {
-    return this.query.count || (this.query.select && _.isString(this.query.select));
-  }
-
   hasModelResult() {
-    return !this.query.count && !this.query.select;
+    return !this.query.count && !this.scalarResult;
   }
 
   refineRow = (row) => {
@@ -211,15 +199,14 @@ class Scope {
     const includes = this.orm.includesResolver.mergeVirtualFieldsDependencies(this.model, baseIncludes);
 
     _.forEach(includes, (input, fieldName) => {
-      if (this.model.fields[fieldName]) {
+      if (this.model.fields[fieldName] && input === true) {
         const fieldCfg = this.model.fields[fieldName];
-        const fieldAlias = this.queryHandler.nextAlias();
         this.fetchedFields[fieldName] = {
-          alias: fieldAlias,
-          transform: fieldCfg.getter || _.identity,
+          alias: this.queryHandler.nextAlias(),
+          transform: fieldCfg.getter,
           expression: `${this.alias}.${escapeId(fieldCfg.column)}`,
         };
-      } else if (this.model.relations[fieldName]) {
+      } else if (this.model.relations[fieldName] && _.isPlainObject(input)) {
         const relation = this.model.relations[fieldName];
         if (!relation.isCollection) {
           if (relation.foreignKey && _.isEqual(input, { id: true })) {
@@ -234,8 +221,14 @@ class Scope {
         } else {
           this.subsequentFetches[fieldName] = input;
         }
-      } else if (this.model.virtualFields[fieldName]) {
+      } else if (this.model.virtualFields[fieldName] && input === true) {
         this.virtualFields.push(fieldName);
+      } else {
+        console.log(fieldName);
+        this.fetchedFields[fieldName] = {
+          alias: this.queryHandler.nextAlias(),
+          expression: this.queryHandler.parser.parseSelect(input),
+        };
       }
     });
   }
@@ -351,11 +344,10 @@ class Scope {
   }
 
   parseRow(row) {
-    const result = _.mapValues(this.fetchedFields, ({ alias, transform }) => {
-      return transform(row[alias]);
-    });
-    const relations = _.mapValues(this.getFetchedChildren(), child => child.parseRow(row));
-    return Object.assign(result, relations);
+    return {
+      ..._.mapValues(this.fetchedFields, ({ alias, transform }) => transform ? transform(row[alias]) : row[alias]),
+      ..._.mapValues(this.getFetchedChildren(), child => child.parseRow(row)),
+    };
   }
 
   resolveSubsequentFetches(rows) {
