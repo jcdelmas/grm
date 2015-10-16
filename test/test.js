@@ -586,6 +586,20 @@ describe('Model', () => {
       });
     });
 
+    describe('count', () => {
+      it ('simple', async () => {
+        const count = await Person.count();
+        count.should.be.eql(6);
+      });
+
+      it ('with filter on collection relation', async () => {
+        const count = await Person.count({
+          'favoriteMovies.name': { $in: [ 'Star Wars', 'The Lord of the Rings' ] }
+        });
+        count.should.be.eql(5);
+      });
+    });
+
     describe('group', () => {
       it('count', async () => {
         const rows = await Person.findAll({
