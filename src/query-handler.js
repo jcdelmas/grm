@@ -217,7 +217,7 @@ class Scope {
         this.fetchedFields[fieldName] = {
           alias: fieldAlias,
           transform: fieldCfg.getter || _.identity,
-          column: fieldCfg.column,
+          expression: `${this.alias}.${escapeId(fieldCfg.column)}`,
         };
       } else if (this.model.relations[fieldName]) {
         const relation = this.model.relations[fieldName];
@@ -226,7 +226,7 @@ class Scope {
             this.fetchedFields[fieldName] = {
               alias: this.queryHandler.nextAlias(),
               transform: id => ({ id }),
-              column: relation.foreignKey,
+              expression: `${this.alias}.${escapeId(relation.foreignKey)}`,
             };
           } else {
             this.resolveScope(fieldName).includes(input);
@@ -262,7 +262,7 @@ class Scope {
 
   resolveSelect() {
     return [
-      ..._.map(this.fetchedFields, field => `${this.alias}.${escapeId(field.column)} AS ${field.alias}`),
+      ..._.map(this.fetchedFields, field => `${field.expression} AS ${field.alias}`),
       ..._(this.getFetchedChildren()).map(child => child.resolveSelect()).flatten().value(),
     ];
   }
