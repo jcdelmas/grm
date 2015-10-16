@@ -387,6 +387,44 @@ describe('Model', () => {
       });
     });
 
+    describe('select', () => {
+      it('one', async () => {
+        const rows = await Person.findAll({
+          select: 'login',
+          where: { age: { $lt: 30 } },
+        });
+        rows.should.be.eql([
+          'jdoe',
+          'rjohnson',
+          'jbrown',
+        ]);
+      });
+
+      it('multiple', async () => {
+        const rows = await Person.findAll({
+          select: [ 'login', 'age' ],
+          where: { age: { $lt: 30 } },
+        });
+        rows.should.be.eql([
+          { login: 'jdoe', age: 20 },
+          { login: 'rjohnson', age: 17 },
+          { login: 'jbrown', age: 28 },
+        ]);
+      });
+
+      it('with aliases', async () => {
+        const rows = await Person.findAll({
+          select: { foo: 'login', bar: 'age' },
+          where: { age: { $lt: 30 } },
+        });
+        rows.should.be.eql([
+          { foo: 'jdoe', bar: 20 },
+          { foo: 'rjohnson', bar: 17 },
+          { foo: 'jbrown', bar: 28 },
+        ]);
+      });
+    });
+
     describe('sort', () => {
       it('basic', async () => {
         const rows = await Person.findAll({ order: 'age' });
@@ -557,44 +595,6 @@ describe('Model', () => {
           'bsmith',
           'lcarter',
           'pmoore',
-        ]);
-      });
-    });
-
-    describe('select', () => {
-      it('one', async () => {
-        const rows = await Person.findAll({
-          select: 'login',
-          where: { age: { $lt: 30 } },
-        });
-        rows.should.be.eql([
-          'jdoe',
-          'rjohnson',
-          'jbrown',
-        ]);
-      });
-
-      it('multiple', async () => {
-        const rows = await Person.findAll({
-          select: [ 'login', 'age' ],
-          where: { age: { $lt: 30 } },
-        });
-        rows.should.be.eql([
-          { login: 'jdoe', age: 20 },
-          { login: 'rjohnson', age: 17 },
-          { login: 'jbrown', age: 28 },
-        ]);
-      });
-
-      it('with aliases', async () => {
-        const rows = await Person.findAll({
-          select: { foo: 'login', bar: 'age' },
-          where: { age: { $lt: 30 } },
-        });
-        rows.should.be.eql([
-          { foo: 'jdoe', bar: 20 },
-          { foo: 'rjohnson', bar: 17 },
-          { foo: 'jbrown', bar: 28 },
         ]);
       });
     });
