@@ -1,5 +1,6 @@
 
 import _ from 'lodash';
+import lazy from './utils/lazy.js';
 import { escape, escapeId } from './client.js';
 import {
   Op,
@@ -191,6 +192,8 @@ class Scope {
     this.fetchedFields = {};
     this.virtualFields = [];
     this.subsequentFetches = {};
+
+    this.resolvingCustomFields = {};
   }
 
   includes(baseIncludes) {
@@ -226,9 +229,17 @@ class Scope {
       } else if (this.model.virtualFields[fieldName] && input === true) {
         this.virtualFields.push(fieldName);
       } else {
+        const parent = this;
         this.fetchedFields[fieldName] = {
           alias: this.queryHandler.nextAlias(),
-          expression: parser.parseSelect(input),
+          get expression() {
+            if (!this.hasOwnProperty('_resolved')) {
+              parent.resolvingCustomFields[fieldName] = true;
+              this._resolved = parser.parseSelect(input);
+              delete parent.resolvingCustomFields[fieldName];
+            }
+            return this._resolved;
+          }
         };
       }
     });
@@ -264,11 +275,13 @@ class Scope {
       } else {
         return this.resolveScope(baseFieldName).resolveField(childFieldName);
       }
-    } else if (this.fetchedFields[fieldName]) {
+    } else if (this.fetchedFields[fieldName] && !this.resolvingCustomFields[fieldName]) {
       return this.fetchedFields[fieldName].expression;
     } else if (this.model.fields[fieldName]) {
       const column = this.model.fields[fieldName].column;
       return `${this.alias}.${escapeId(column)}`;
+    } else if (this.resolvingCustomFields[fieldName]) {
+      throw new Error(`Recursive field [${fieldName}]`);
     } else {
       throw new Error(`Unknown field [${fieldName}] in model [${this.model.name}]`);
     }

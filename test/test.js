@@ -410,6 +410,30 @@ describe('Model', () => {
           { foo: 'jbrown', bar: 28 },
         ]);
       });
+
+      it('with reference on other selected field', async () => {
+        const rows = await Person.findAll({
+          select: { foo: 'login', bar: sql.plus(sql.field('baz'), 1), baz: 'age' },
+          where: { age: { $lt: 30 } },
+        });
+        rows.should.be.eql([
+          { foo: 'jdoe', bar: 21, baz: 20 },
+          { foo: 'rjohnson', bar: 18, baz: 17 },
+          { foo: 'jbrown', bar: 29, baz: 28 },
+        ]);
+      });
+
+      it('fallback on model fields for self-referencing fields', async () => {
+        const rows = await Person.findAll({
+          select: { login: 'login', age: sql.plus(sql.field('age'), 1) },
+          where: { age: { $lt: 30 } },
+        });
+        rows.should.be.eql([
+          { login: 'jdoe', age: 21 },
+          { login: 'rjohnson', age: 18 },
+          { login: 'jbrown', age: 29 },
+        ]);
+      });
     });
 
     describe('sort', () => {
@@ -603,7 +627,7 @@ describe('Model', () => {
     describe('group', () => {
       it('count', async () => {
         const rows = await Person.findAll({
-          select: { gender: 'gender', count: sql.count(sql.field('id')) },
+          select: { gender: true, count: sql.count(sql.field('id')) },
           group: 'gender',
           order: '-count',
         });
@@ -614,7 +638,7 @@ describe('Model', () => {
       });
       it('avg', async () => {
         const rows = await Person.findAll({
-          select: { gender: 'gender', meanAge: sql.avg(sql.field('age')) },
+          select: { gender: true, meanAge: sql.avg(sql.field('age')) },
           group: 'gender',
           order: sql.desc(sql.count(sql.field('id'))),
         });
@@ -625,7 +649,7 @@ describe('Model', () => {
       });
       it('having', async () => {
         const rows = await Person.findAll({
-          select: { gender: 'gender', meanAge: sql.avg(sql.field('age')) },
+          select: { gender: true, meanAge: sql.avg(sql.field('age')) },
           group: 'gender',
           having: sql.gt(sql.field('meanAge'), 40),
         });
@@ -650,7 +674,7 @@ describe('Model', () => {
     describe('functions and operations', () => {
       it('minus', async () => {
         const rows = await Person.findAll({
-          select: { login: 'login', minAge: sql.minus(sql.field('age'), 10) },
+          select: { login: true, minAge: sql.minus(sql.field('age'), 10) },
           where: { age: { $gt: 30 } },
           order: 'age',
         });
@@ -664,7 +688,7 @@ describe('Model', () => {
       // FIXME: replace 0 and 1 by boolean
       it('comparison', async () => {
         const rows = await Person.findAll({
-          select: { login: 'login', young: sql.lt(sql.field('age'), 30) },
+          select: { login: true, young: sql.lt(sql.field('age'), 30) },
           order: 'login',
         });
         rows.should.be.eql([
@@ -679,7 +703,7 @@ describe('Model', () => {
 
       it('floor', async () => {
         const rows = await Person.findAll({
-          select: { gender: 'gender', meanAge: sql.floor(sql.avg(sql.field('age'))) },
+          select: { gender: true, meanAge: sql.floor(sql.avg(sql.field('age'))) },
           group: 'gender',
           order: sql.desc(sql.count(sql.field('id'))),
         });
