@@ -617,14 +617,14 @@ describe('Model', () => {
     });
 
     describe('count', () => {
-      it ('simple', async () => {
+      it('simple', async () => {
         const count = await Person.count();
         count.should.be.eql(6);
       });
 
-      it ('with filter on collection relation', async () => {
+      it('with filter on collection relation', async () => {
         const count = await Person.count({
-          'favoriteMovies.name': { $in: [ 'Star Wars', 'The Lord of the Rings' ] }
+          'favoriteMovies.name': { $in: [ 'Star Wars', 'The Lord of the Rings' ] },
         });
         count.should.be.eql(5);
       });

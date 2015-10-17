@@ -1,5 +1,5 @@
 
-export default function lazy (fn) {
+export default function lazy(fn) {
   let value;
   let resolved = false;
   let resolving = false;

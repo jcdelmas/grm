@@ -1,6 +1,5 @@
 
 import _ from 'lodash';
-import lazy from './utils/lazy.js';
 import { escape, escapeId } from './client.js';
 import {
   Op,
@@ -239,7 +238,7 @@ class Scope {
               delete parent.resolvingCustomFields[fieldName];
             }
             return this._resolved;
-          }
+          },
         };
       }
     });
