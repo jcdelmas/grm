@@ -234,17 +234,6 @@ class Scope {
     });
   }
 
-  mergeIncludes(target, source) {
-    _.forEach(source, (value, key) => {
-      if (!target[key] || target[key] === true) {
-        target[key] = source[key];
-      } else if (_.isObject(source[key])) {
-        target[key] = this.mergeIncludes(target[key], source[key]);
-      }
-    });
-    return target;
-  }
-
   resolveJoins() {
     return _(this.children).map(child => {
       return [
