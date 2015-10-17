@@ -256,14 +256,16 @@ class Scope {
       const baseFieldName = fieldName.slice(0, index);
       const childFieldName = fieldName.slice(index + 1);
       if (childFieldName === 'id'
-          && this.model.relations[baseFieldName]
-          && this.model.relations[baseFieldName].foreignKey) {
+        && this.model.relations[baseFieldName]
+        && this.model.relations[baseFieldName].foreignKey) {
         // avoid useless joins when possible
         const column = this.model.relations[baseFieldName].foreignKey;
         return `${this.alias}.${escapeId(column)}`;
       } else {
         return this.resolveScope(baseFieldName).resolveField(childFieldName);
       }
+    } else if (this.fetchedFields[fieldName]) {
+      return this.fetchedFields[fieldName].expression;
     } else if (this.model.fields[fieldName]) {
       const column = this.model.fields[fieldName].column;
       return `${this.alias}.${escapeId(column)}`;

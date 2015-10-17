@@ -605,7 +605,7 @@ describe('Model', () => {
         const rows = await Person.findAll({
           select: { gender: 'gender', count: sql.count(sql.field('id')) },
           group: 'gender',
-          order: sql.desc(sql.count(sql.field('id'))),
+          order: '-count',
         });
         rows.should.be.eql([
           { gender: 'M', count: 4 },
@@ -627,7 +627,7 @@ describe('Model', () => {
         const rows = await Person.findAll({
           select: { gender: 'gender', meanAge: sql.avg(sql.field('age')) },
           group: 'gender',
-          having: sql.gt(sql.avg(sql.field('age')), 40),
+          having: sql.gt(sql.field('meanAge'), 40),
         });
         rows.should.be.eql([
           { gender: 'W', meanAge: 45 },
@@ -637,7 +637,7 @@ describe('Model', () => {
         const rows = await Person.findAll({
           select: { cityName: 'city.name', count: sql.count(sql.field('id')) },
           group: 'city.id',
-          order: sql.desc(sql.count(sql.field('id'))),
+          order: '-count',
         });
         rows.should.be.eql([
           { cityName: 'New-York', count: 3 },
