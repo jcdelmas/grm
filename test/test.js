@@ -614,35 +614,35 @@ describe('Model', () => {
       });
       it('avg', async () => {
         const rows = await Person.findAll({
-          select: { gender: 'gender', age: sql.avg(sql.field('age')) },
+          select: { gender: 'gender', meanAge: sql.avg(sql.field('age')) },
           group: 'gender',
           order: sql.desc(sql.count(sql.field('id'))),
         });
         rows.should.be.eql([
-          { gender: 'M', age: 32.25 },
-          { gender: 'W', age: 45 },
+          { gender: 'M', meanAge: 32.25 },
+          { gender: 'W', meanAge: 45 },
         ]);
       });
       it('having', async () => {
         const rows = await Person.findAll({
-          select: { gender: 'gender', age: sql.avg(sql.field('age')) },
+          select: { gender: 'gender', meanAge: sql.avg(sql.field('age')) },
           group: 'gender',
           having: sql.gt(sql.avg(sql.field('age')), 40),
         });
         rows.should.be.eql([
-          { gender: 'W', age: 45 },
+          { gender: 'W', meanAge: 45 },
         ]);
       });
       it('with many-to-one relation', async () => {
         const rows = await Person.findAll({
-          select: { city: 'city.name', count: sql.count(sql.field('id')) },
+          select: { cityName: 'city.name', count: sql.count(sql.field('id')) },
           group: 'city.id',
           order: sql.desc(sql.count(sql.field('id'))),
         });
         rows.should.be.eql([
-          { city: 'New-York', count: 3 },
-          { city: 'Los Angeles', count: 2 },
-          { city: 'San Francisco', count: 1 },
+          { cityName: 'New-York', count: 3 },
+          { cityName: 'Los Angeles', count: 2 },
+          { cityName: 'San Francisco', count: 1 },
         ]);
       });
     });
@@ -650,14 +650,14 @@ describe('Model', () => {
     describe('functions and operations', () => {
       it('minus', async () => {
         const rows = await Person.findAll({
-          select: { login: 'login', age: sql.minus(sql.field('age'), 10) },
+          select: { login: 'login', minAge: sql.minus(sql.field('age'), 10) },
           where: { age: { $gt: 30 } },
           order: 'age',
         });
         rows.should.be.eql([
-          { login: 'lcarter', age: 27 },
-          { login: 'pmoore', age: 43 },
-          { login: 'bsmith', age: 54 },
+          { login: 'lcarter', minAge: 27 },
+          { login: 'pmoore', minAge: 43 },
+          { login: 'bsmith', minAge: 54 },
         ]);
       });
 
@@ -679,13 +679,13 @@ describe('Model', () => {
 
       it('floor', async () => {
         const rows = await Person.findAll({
-          select: { gender: 'gender', age: sql.floor(sql.avg(sql.field('age'))) },
+          select: { gender: 'gender', meanAge: sql.floor(sql.avg(sql.field('age'))) },
           group: 'gender',
           order: sql.desc(sql.count(sql.field('id'))),
         });
         rows.should.be.eql([
-          { gender: 'M', age: 32 },
-          { gender: 'W', age: 45 },
+          { gender: 'M', meanAge: 32 },
+          { gender: 'W', meanAge: 45 },
         ]);
       });
     });
