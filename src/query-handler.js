@@ -38,8 +38,6 @@ class QueryHandler {
     this.aliasCounter = 0;
     this.distinctRows = false;
 
-    this.parser = new Parser(this);
-
     this.scalarResult = query.select && !_.isPlainObject(query.select) && !_.isArray(query.select);
     this.includes = this.orm.includesResolver.resolve(
       this.model,
@@ -47,6 +45,8 @@ class QueryHandler {
       !query.select
     );
     this.rootScope = new Scope(this, model);
+
+    this.parser = new Parser(this.rootScope);
   }
 
   execute() {
@@ -198,6 +198,8 @@ class Scope {
 
     const includes = this.orm.includesResolver.mergeVirtualFieldsDependencies(this.model, baseIncludes);
 
+    const parser = new Parser(this);
+
     _.forEach(includes, (input, fieldName) => {
       if (this.model.fields[fieldName] && input === true) {
         const fieldCfg = this.model.fields[fieldName];
@@ -226,7 +228,7 @@ class Scope {
       } else {
         this.fetchedFields[fieldName] = {
           alias: this.queryHandler.nextAlias(),
-          expression: this.queryHandler.parser.parseSelect(input),
+          expression: parser.parseSelect(input),
         };
       }
     });
@@ -396,10 +398,10 @@ const COMPARISON_OPERATORS = {
 class Parser {
 
   /**
-   * @param {QueryHandler} queryHandler
+   * @param {Scope} scope
    */
-  constructor(queryHandler) {
-    this.queryHandler = queryHandler;
+  constructor(scope) {
+    this.scope = scope;
   }
 
   parseFilter(where) {
@@ -475,7 +477,7 @@ class Parser {
 
   expression(expr) {
     if (expr instanceof Field) {
-      return this.queryHandler.resolveField(expr.fieldName);
+      return this.scope.resolveField(expr.fieldName);
     } else if (expr instanceof Aggregate) {
       const distinct = expr.distinct ? 'DISTINCT ' : '';
       return expr.fn + '(' + distinct + this.expression(expr.expr) + ')';
