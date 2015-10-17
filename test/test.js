@@ -82,10 +82,16 @@ const State = grm.define('State', {
   },
 });
 
-grm.define('Movie', {
+const Movie = grm.define('Movie', {
   fields: {
     id: {},
     name: {},
+  },
+  relations: {
+    fans: {
+      model: 'Person',
+      mappedBy: 'favoriteMovies',
+    },
   },
 });
 
@@ -736,6 +742,22 @@ describe('Model', () => {
           ['lcarter', 'Pulp Fiction'],
           ['pmoore', 'Star Wars'],
           ['bsmith', 'The Lord of the Rings'],
+        ]);
+      });
+    });
+
+    describe('Reverse relations', () => {
+      it('many-to-many', async () => {
+        const rows = await Movie.findAll({ includes: ['fans'] });
+        rows.map(({ name, fans }) => [name, fans.map(f => f.login)]).should.be.eql([
+          ['The Godfather', ['lcarter', 'pmoore']],
+          ['Pulp Fiction', ['jdoe', 'lcarter']],
+          ['The Good, the Bad and the Ugly', ['rjohnson', 'jbrown']],
+          ['Forrest Gump', []],
+          ['The Lord of the Rings', ['jdoe', 'bsmith', 'rjohnson', 'jbrown']],
+          ['Star Wars', ['jdoe', 'pmoore']],
+          ['Usual Suspects', ['rjohnson']],
+          ['The Green Mile', ['lcarter', 'jbrown']],
         ]);
       });
     });

@@ -15,12 +15,15 @@ export default class Model {
     this.tableName = this.cfg.tableName || underscore(this.name);
 
     this.fields = this.cfg.fields ? _.mapValues(cfg.fields, this._computeFieldCfg) : {};
-    this.relations = this.cfg.relations ? _.mapValues(this.cfg.relations, this._computeRelationCfg) : {};
     this.virtualFields = this.cfg.virtualFields ? _.mapValues(this.cfg.virtualFields, this._computeVirtualFieldCfg) : {};
 
-    this.defaultIncludes = this._resolveDefaultIncludes();
+    this.relations = {};
 
     this._resolvers = {};
+
+    this._resolveRelationCfgs().then(() => {
+      this.defaultIncludes = this._resolveDefaultIncludes();
+    });
   }
 
   findById(id, includes = true) {
@@ -67,34 +70,60 @@ export default class Model {
     return cfg;
   };
 
-  _computeRelationCfg = (baseCfg, fieldName) => {
-    const cfg = _.clone(baseCfg);
-
-    if (cfg.through) {
-      if (!cfg.type) {
-        cfg.type = Relations.MANY_TO_MANY;
-      }
-      if (!cfg.sourceLink) {
-        cfg.sourceLink = this.name.charAt(0).toLowerCase() + this.name.slice(1);
-      }
-
-      if (!cfg.targetLink) {
-        cfg.targetLink = cfg.model.charAt(0).toLowerCase() + cfg.model.slice(1);
-      }
-    } else if (cfg.mappedBy) {
-      if (!cfg.type) {
-        cfg.type = Relations.ONE_TO_MANY;
-      }
+  _resolveRelationCfgs() {
+    if (this.cfg.relations) {
+      return Promise.all(_(this.cfg.relations).map((userCfg, fieldName) => {
+        if (userCfg.mappedBy) {
+          return this.orm.registry.getAsync(userCfg.model).then(targetModel => {
+            const reverseRelation = targetModel.relations[userCfg.mappedBy];
+            this.relations[fieldName] = this._resolveMappedRelationCfg(userCfg, fieldName, reverseRelation);
+          });
+        } else {
+          this.relations[fieldName] = this._resolveSimpleRelationCfg(userCfg, fieldName);
+        }
+      }).compact().value());
     } else {
-      if (!cfg.type) {
-        cfg.type = Relations.MANY_TO_ONE;
-      }
+      return Promise.resolve();
+    }
+  }
 
-      if (!cfg.foreignKey) {
-        cfg.foreignKey = underscore(fieldName) + '_id';
-      }
+  static _relationTypeMapping = {
+    [Relations.MANY_TO_ONE]: Relations.ONE_TO_MANY,
+    [Relations.ONE_TO_MANY]: Relations.MANY_TO_ONE,
+    [Relations.MANY_TO_MANY]: Relations.MANY_TO_MANY,
+    [Relations.ONE_TO_ONE]: Relations.ONE_TO_ONE,
+  };
+
+  _resolveMappedRelationCfg(userCfg, fieldName, reverseRelation) {
+    const cfg = _.clone(userCfg);
+
+    cfg.type = Model._relationTypeMapping[reverseRelation.type];
+
+    if (reverseRelation.through) {
+      cfg.through = reverseRelation.through;
+      cfg.sourceLink = reverseRelation.targetLink;
+      cfg.targetLink = reverseRelation.sourceLink;
     }
 
+    return this._commonRelationResolving(cfg);
+  }
+
+  _resolveSimpleRelationCfg(userCfg, fieldName) {
+    const cfg = _.clone(userCfg);
+
+    if (cfg.through) {
+      cfg.type = cfg.type || Relations.MANY_TO_MANY;
+      cfg.sourceLink = cfg.sourceLink || this.name.charAt(0).toLowerCase() + this.name.slice(1);
+      cfg.targetLink = cfg.targetLink || cfg.model.charAt(0).toLowerCase() + cfg.model.slice(1);
+    } else {
+      cfg.type = cfg.type || Relations.MANY_TO_ONE;
+      cfg.foreignKey = cfg.foreignKey || underscore(fieldName) + '_id';
+    }
+
+    return this._commonRelationResolving(cfg);
+  }
+
+  _commonRelationResolving(cfg) {
     cfg.isCollection = cfg.type === Relations.MANY_TO_MANY || cfg.type === Relations.ONE_TO_MANY;
 
     if (!cfg.hasOwnProperty('required')) {
@@ -102,7 +131,7 @@ export default class Model {
     }
 
     return cfg;
-  };
+  }
 
   _computeVirtualFieldCfg = (baseCfg, fieldName) => {
     if (!baseCfg.hasOwnProperty('getter')) {
