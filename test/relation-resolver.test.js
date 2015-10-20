@@ -1,7 +1,7 @@
 
 import 'should';
 
-import Grm, { sql } from '../src/index.js';
+import Grm from '../src/index.js';
 
 const grm = new Grm({
   user: 'root',
@@ -10,7 +10,7 @@ const grm = new Grm({
   logging: true,
 });
 
-const Person = grm.define('Person', {
+grm.define('Person', {
   fields: {
     id: {},
     firstname: {},
@@ -52,7 +52,7 @@ const Person = grm.define('Person', {
   },
 });
 
-const City = grm.define('City', {
+grm.define('City', {
   fields: {
     id: {},
     name: {},
@@ -66,7 +66,7 @@ const City = grm.define('City', {
   },
 });
 
-const State = grm.define('State', {
+grm.define('State', {
   fields: {
     id: {},
     name: {},
@@ -119,9 +119,9 @@ describe('Include resolver', () => {
         gender: true,
         login: true,
         city: {
-          id: true
+          id: true,
         },
-      }
+      },
     });
   });
 });
