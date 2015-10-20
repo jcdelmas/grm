@@ -2,6 +2,7 @@
 import 'should';
 
 import Grm, { sql } from '../src/index.js';
+import { escape } from '../src/client';
 
 const grm = new Grm({
   user: 'root',
@@ -153,7 +154,7 @@ const data = {
 };
 
 function values(items) {
-  return items.map(fields => '(' + fields.map(client.escape).join(', ') + ')').join(', ');
+  return items.map(fields => '(' + fields.map(escape).join(', ') + ')').join(', ');
 }
 
 before(async () => {

@@ -99,9 +99,6 @@ class QueryHandler {
     }
 
     const query = qb.join('');
-    if (this.orm.config.logging) {
-      console.log(query);
-    }
     const rowParser = this.rowParser();
     return this.orm.client.query(query).then(rawResults => {
       const rows = rawResults.map(rowParser);

@@ -25,7 +25,4 @@ export default class Client {
       });
     });
   }
-
-  escape = escape;
-  escapeId = escapeId;
 }
