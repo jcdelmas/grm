@@ -4,7 +4,7 @@ export default function withLogger(client) {
 }
 
 class ClientLogger {
-  constructor (client) {
+  constructor(client) {
     this.client = client;
   }
 
