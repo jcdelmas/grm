@@ -26,12 +26,12 @@ class ManyToManyResolver {
     this.throughModel = this.orm.registry.get(this.relation.through);
   }
 
-  resolve(rows, includes) {
+  resolve(rows, select) {
     rows.forEach(p => p[this.fieldName] = []);
     const groupedRows = _.groupBy(rows, 'id');
 
     const promises = _(groupedRows).keys().chunk(BATCH_SIZE).map(ids => {
-      const params = this.getParams({ $in: ids }, includes);
+      const params = this.getParams({ $in: ids }, select);
       return this.throughModel.findAll(params).then(links => {
         const targetRows = _(links).map(this.relation.targetLink).uniq('id').value();
         const indexedTargetRows = _.indexBy(targetRows, 'id');
@@ -45,13 +45,13 @@ class ManyToManyResolver {
     return Promise.all(promises);
   }
 
-  getParams(filter, includes) {
+  getParams(filter, select) {
     const params = {
       where: {},
-      includes: {},
+      select: {},
     };
-    params.includes[this.relation.sourceLink] = true;
-    params.includes[this.relation.targetLink] = includes;
+    params.select[this.relation.sourceLink] = { id: true };
+    params.select[this.relation.targetLink] = select;
     if (this.relation.order) {
       params.order = this.relation.order;
     }
@@ -69,11 +69,11 @@ class OneToManyResolver {
     this.targetModel = this.orm.registry.get(relation.model);
   }
 
-  resolve(rows, includes) {
+  resolve(rows, select) {
     rows.forEach(p => p[this.fieldName] = []);
     const groupedRows = _.groupBy(rows, 'id');
     const promises = _(groupedRows).keys().chunk(BATCH_SIZE).map(ids => {
-      const params = this.getParams({ $in: ids }, includes);
+      const params = this.getParams({ $in: ids }, select);
       return this.targetModel.findAll(params).then(targetRows => {
         targetRows.forEach(targetRow => {
           groupedRows[targetRow[this.relation.mappedBy].id].forEach(row => {
@@ -85,10 +85,10 @@ class OneToManyResolver {
     return Promise.all(promises);
   }
 
-  getParams(filter, includes) {
+  getParams(filter, select) {
     const params = {
       where: {},
-      includes: includes,
+      select,
     };
     if (this.relation.order) {
       params.order = this.relation.order;
