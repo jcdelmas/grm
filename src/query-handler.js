@@ -165,6 +165,8 @@ class QueryHandler {
       });
     } else if (_.isArray(obj)) {
       return obj.map(v => this.refineR(v, includes));
+    } else {
+      return obj;
     }
   }
 }
@@ -195,7 +197,10 @@ class Scope {
   includes(baseIncludes) {
     this.isFetched = true;
 
-    const includes = this.orm.includesResolver.mergeVirtualFieldsDependencies(this.model, baseIncludes);
+    const includes = {
+      ...this.orm.includesResolver.mergeVirtualFieldsDependencies(this.model, baseIncludes),
+      id: true,
+    };
 
     const parser = new Parser(this);
 
@@ -345,29 +350,35 @@ class Scope {
   }
 
   parseRow(row) {
-    return {
-      ..._.mapValues(this.fetchedFields, ({ alias, transform }) => transform ? transform(row[alias]) : row[alias]),
-      ..._.mapValues(this.getFetchedChildren(), child => child.parseRow(row)),
-    };
+    if (row[this.fetchedFields.id.alias] !== null) {
+      return {
+        ..._.mapValues(this.fetchedFields, ({ alias, transform }) => transform ? transform(row[alias]) : row[alias]),
+        ..._.mapValues(this.getFetchedChildren(), child => child.parseRow(row)),
+      };
+    } else {
+      return null;
+    }
   }
 
   resolveSubsequentFetches(rows) {
     const promises = [
       ..._.map(this.subsequentFetches, (cfg, fieldName) => this.model._resolver(fieldName).resolve(rows, cfg)),
       ..._.map(this.getFetchedChildren(), (child, fieldName) => {
-        return child.resolveSubsequentFetches(rows.map(row => row[fieldName]));
+        return child.resolveSubsequentFetches(rows.map(row => row[fieldName]).filter(_.identity));
       }),
     ];
     return Promise.all(promises);
   }
 
   resolveVirtualFields(row) {
-    this.virtualFields.forEach(fieldName => {
-      row[fieldName] = this.model.virtualFields[fieldName].getter.call(row);
-    });
-    _.forEach(this.getFetchedChildren(), (child, fieldName) => {
-      return child.resolveVirtualFields(row[fieldName]);
-    });
+    if (row !== null) {
+      this.virtualFields.forEach(fieldName => {
+        row[fieldName] = this.model.virtualFields[fieldName].getter.call(row);
+      });
+      _.forEach(this.getFetchedChildren(), (child, fieldName) => {
+        return child.resolveVirtualFields(row[fieldName]);
+      });
+    }
   }
 
   getFetchedChildren() {
