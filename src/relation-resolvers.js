@@ -55,7 +55,8 @@ class ManyToManyResolver {
     if (this.relation.order) {
       params.order = this.relation.order;
     }
-    params.where[this.relation.sourceLink + '.id'] = filter;
+    const baseWhere = { [this.relation.sourceLink + '.id']: filter };
+    params.where = this.relation.where ? [baseWhere, this.relation.where] : baseWhere;
     return params;
   }
 }
@@ -93,7 +94,8 @@ class OneToManyResolver {
     if (this.relation.order) {
       params.order = this.relation.order;
     }
-    params.where[this.relation.mappedBy + '.id'] = filter;
+    const baseWhere = { [this.relation.mappedBy + '.id']: filter };
+    params.where = this.relation.where ? [baseWhere, this.relation.where] : baseWhere;
     return params;
   }
 }

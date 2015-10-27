@@ -35,7 +35,7 @@ const Person = grm.define('Person', {
       through: 'FavoriteMovie',
       order: 'position',
       where: {
-        year: { $lt: 1990 },
+        'movie.year': { $lt: 1990 },
       },
     },
   },
@@ -87,6 +87,7 @@ const Movie = grm.define('Movie', {
   fields: {
     id: {},
     name: {},
+    year: {},
   },
   relations: {
     fans: {
@@ -286,6 +287,21 @@ describe('Model', () => {
         rows.map(({ login, favoriteMovies }) => ([ login, favoriteMovies.map(m => m.name) ])).should.be.eql([
           ['lcarter', [ 'Pulp Fiction', 'The Green Mile', 'The Godfather' ] ],
           ['pmoore', [ 'Star Wars', 'The Godfather' ] ],
+        ]);
+      });
+
+      it('many-to-many (with filtered relation)', async () => {
+        const rows = await Person.findAll({
+          includes: { favoriteOldMovies: true },
+          order: 'age',
+        });
+        rows.map(({ login, favoriteOldMovies }) => ([ login, favoriteOldMovies.map(m => m.name) ])).should.be.eql([
+          ['rjohnson', ['The Good, the Bad and the Ugly']],
+          ['jdoe', ['Star Wars']],
+          ['jbrown', ['The Good, the Bad and the Ugly']],
+          ['lcarter', ['The Godfather']],
+          ['pmoore', ['Star Wars', 'The Godfather']],
+          ['bsmith', []],
         ]);
       });
 
