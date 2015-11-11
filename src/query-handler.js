@@ -198,7 +198,7 @@ class Scope {
   includes(baseIncludes) {
     this.isFetched = true;
 
-    const includes = this.orm.includesResolver.mergeVirtualFieldsDependencies(this.model, baseIncludes);
+    const includes = this.orm.includesResolver.mergeDependencies(this.model, baseIncludes);
 
     const parser = new Parser(this);
 
@@ -242,6 +242,7 @@ class Scope {
         };
       }
     });
+    this.virtualFields.reverse(); // put dependencies at the beginning
   }
 
   resolveJoins() {
@@ -365,11 +366,11 @@ class Scope {
   }
 
   resolveVirtualFields(row) {
-    this.virtualFields.forEach(fieldName => {
-      row[fieldName] = this.model.virtualFields[fieldName].getter.call(row);
-    });
     _.forEach(this.getFetchedChildren(), (child, fieldName) => {
       return child.resolveVirtualFields(row[fieldName]);
+    });
+    this.virtualFields.forEach(fieldName => {
+      row[fieldName] = this.model.virtualFields[fieldName].getter.call(row);
     });
   }
 

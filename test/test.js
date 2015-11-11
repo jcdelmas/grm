@@ -47,9 +47,15 @@ const Person = grm.define('Person', {
       },
     },
     favoriteMovieName: {
-      dependsOn: { favoriteMovies: true },
+      dependsOn: { favoriteMovies: { name: true } },
       getter() {
         return this.favoriteMovies[0].name;
+      },
+    },
+    favoriteMovieNameUpper: {
+      dependsOn: { favoriteMovieName: true },
+      getter() {
+        return this.favoriteMovieName.toUpperCase();
       },
     },
   },
@@ -773,7 +779,7 @@ describe('Model', () => {
       });
       it('with dependency', async () => {
         const rows = await Person.findAll({
-          includes: { favoriteMovieName: true },
+          includes: ['favoriteMovieName'],
           where: { age: { $gt: 30 } },
           order: 'age',
         });
@@ -781,6 +787,30 @@ describe('Model', () => {
           ['lcarter', 'Pulp Fiction'],
           ['pmoore', 'Star Wars'],
           ['bsmith', 'The Lord of the Rings'],
+        ]);
+      });
+      it('with dependency and with select', async () => {
+        const rows = await Person.findAll({
+          select: ['login', 'favoriteMovieName'],
+          where: { age: { $gt: 30 } },
+          order: 'age',
+        });
+        rows.map(({ login, favoriteMovieName }) => [ login, favoriteMovieName ]).should.be.eql([
+          ['lcarter', 'Pulp Fiction'],
+          ['pmoore', 'Star Wars'],
+          ['bsmith', 'The Lord of the Rings'],
+        ]);
+      });
+      it('with dependency on other virtual field', async () => {
+        const rows = await Person.findAll({
+          select: ['login', 'favoriteMovieNameUpper'],
+          where: { age: { $gt: 30 } },
+          order: 'age',
+        });
+        rows.map(({ login, favoriteMovieNameUpper }) => [ login, favoriteMovieNameUpper ]).should.be.eql([
+          ['lcarter', 'PULP FICTION'],
+          ['pmoore', 'STAR WARS'],
+          ['bsmith', 'THE LORD OF THE RINGS'],
         ]);
       });
     });

@@ -44,12 +44,16 @@ export default class IncludesResolver {
     }
   }
 
+  mergeDependencies(model, includes) {
+    return this._addMissingIds(model, this._mergeVirtualFieldsDependencies(model, includes));
+  }
+
   /**
    * @param {Model} model
    * @param {object} includes
    * @return {object}
    */
-  mergeVirtualFieldsDependencies(model, includes) {
+  _mergeVirtualFieldsDependencies(model, includes) {
     return _(model.virtualFields)
         .filter((cfg, field) => includes[field])
         .map('dependsOn')
@@ -58,8 +62,19 @@ export default class IncludesResolver {
         }, includes);
   }
 
+  _addMissingIds(model, includes) {
+    return {
+      ...includes,
+      id: true,
+      ..._(model.relations)
+        .pick((cfg, field) => includes[field])
+        .mapValues((cfg, field) => this._addMissingIds(cfg.model, includes[field]))
+        .value(),
+    };
+  }
+
   _fullResolve(model, includes) {
-    return this.mergeVirtualFieldsDependencies(model, this.resolve(model, includes, false));
+    return this._mergeVirtualFieldsDependencies(model, this.resolve(model, includes, false));
   }
 
   _mergeIncludes(target, source) {
