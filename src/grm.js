@@ -3,6 +3,7 @@ import _ from 'lodash';
 
 import Model from './model';
 import Client from './client';
+import withLogger from './client-logger';
 import Registry from './registry';
 import queryHandlerFactory from './query-handler';
 import IncludesResolver from './includes-resolver';
@@ -16,7 +17,7 @@ export default class Grm {
   constructor(config) {
     this.config = _.defaults(config, DEFAULT_CONFIG);
     this.registry = new Registry();
-    this.client = new Client(config);
+    this.client = this._createClient();
     this.query = queryHandlerFactory(this);
     this.includesResolver = new IncludesResolver(this);
   }
@@ -32,5 +33,10 @@ export default class Grm {
 
   importFile(filePath) {
     return require(filePath)(this);
+  }
+
+  _createClient() {
+    const client = new Client(this.config);
+    return this.config.logging ? withLogger(client) : client;
   }
 }
