@@ -24,6 +24,7 @@ const Person = grm.define('Person', {
   },
   relations: {
     city: { model: 'City' },
+    religion: { model: 'Religion' },
     favoriteMovies: {
       model: 'Movie',
       through: 'FavoriteMovie',
@@ -82,6 +83,13 @@ const State = grm.define('State', {
   },
 });
 
+grm.define('Religion', {
+  fields: {
+    id: {},
+    name: {},
+  },
+});
+
 const Movie = grm.define('Movie', {
   fields: {
     id: {},
@@ -107,12 +115,12 @@ grm.define('FavoriteMovie', {
 
 const data = {
   persons: [
-      [1, 'John',     'Doe',     'jdoe',     'john.doe@msn.com',          'M', 20, 1],
-      [2, 'Brad',     'Smith',   'bsmith',   'brad.smith@yahoo.com',      'M', 64, 2],
-      [3, 'Lauren',   'Carter',  'lcarter',  'lauren.carter@hotmail.com', 'W', 37, 1],
-      [4, 'Robert',   'Johnson', 'rjohnson', 'robert.johnson@gmail.com',  'M', 17, 3],
-      [5, 'Patricia', 'Moore',   'pmoore',   'patricia.moore@gmail.com',  'W', 53, 3],
-      [6, 'John',     'Brown',   'jbrown',   'john.brown@gmail.com',      'M', 28, 1],
+      [1, 'John',     'Doe',     'jdoe',     'john.doe@msn.com',          'M', 20, 1, 1],
+      [2, 'Brad',     'Smith',   'bsmith',   'brad.smith@yahoo.com',      'M', 64, 2, null],
+      [3, 'Lauren',   'Carter',  'lcarter',  'lauren.carter@hotmail.com', 'W', 37, 1, 1],
+      [4, 'Robert',   'Johnson', 'rjohnson', 'robert.johnson@gmail.com',  'M', 17, 3, null],
+      [5, 'Patricia', 'Moore',   'pmoore',   'patricia.moore@gmail.com',  'W', 53, 3, null],
+      [6, 'John',     'Brown',   'jbrown',   'john.brown@gmail.com',      'M', 28, 1, 2],
   ],
   cities: [
     [1, 'New-York', 1],
@@ -122,6 +130,10 @@ const data = {
   states: [
     [1, 'New-York'],
     [2, 'California'],
+  ],
+  religions: [
+    [1, 'Catholicism'],
+    [2, 'Islam'],
   ],
   movies: [
     [1, 'The Godfather', 1972],
@@ -160,6 +172,7 @@ before(async () => {
   await client.query(`DROP TABLE IF EXISTS person`);
   await client.query(`DROP TABLE IF EXISTS city`);
   await client.query(`DROP TABLE IF EXISTS state`);
+  await client.query(`DROP TABLE IF EXISTS religion`);
   await client.query(`DROP TABLE IF EXISTS movie`);
   await client.query(`DROP TABLE IF EXISTS favorite_movie`);
   await client.query(`
@@ -172,6 +185,7 @@ before(async () => {
       gender char(1) NOT NULL,
       age int NOT NULL,
       city_id int(11) NOT NULL,
+      religion_id int(11) NULL,
       PRIMARY KEY (id)
     )
   `);
@@ -185,6 +199,13 @@ before(async () => {
   `);
   await client.query(`
     CREATE TABLE state (
+      id int(11) UNIQUE NOT NULL,
+      name varchar(50) NOT NULL,
+      PRIMARY KEY (id)
+    )
+  `);
+  await client.query(`
+    CREATE TABLE religion (
       id int(11) UNIQUE NOT NULL,
       name varchar(50) NOT NULL,
       PRIMARY KEY (id)
@@ -208,7 +229,7 @@ before(async () => {
     )
   `);
   await client.query(`
-    INSERT INTO person (id, firstname, lastname, login, email, gender, age, city_id)
+    INSERT INTO person (id, firstname, lastname, login, email, gender, age, city_id, religion_id)
     VALUES ${values(data.persons)}
   `);
   await client.query(`
@@ -218,6 +239,10 @@ before(async () => {
   await client.query(`
     INSERT INTO city (id, name, state_id)
     VALUES ${values(data.cities)}
+  `);
+  await client.query(`
+    INSERT INTO religion (id, name)
+    VALUES ${values(data.religions)}
   `);
   await client.query(`
     INSERT INTO movie (id, name, year)
@@ -233,8 +258,8 @@ describe('Model', () => {
   describe('#findAll', () => {
     it('should return all rows from table', async () => {
       const rows = await Person.findAll();
-      rows.map(({ id, firstname, lastname, login, email, gender, age, city }) => {
-        return [id, firstname, lastname, login, email, gender, age, city.id];
+      rows.map(({ id, firstname, lastname, login, email, gender, age, city, religion }) => {
+        return [id, firstname, lastname, login, email, gender, age, city.id, religion && religion.id];
       }).should.be.eql(data.persons);
     });
 
@@ -366,6 +391,7 @@ describe('Model', () => {
             gender: false,
             age: false,
             city: false,
+            religion: false,
           },
           order: 'id',
         });
@@ -552,6 +578,19 @@ describe('Model', () => {
           'jdoe',
           'lcarter',
           'jbrown',
+        ]);
+      });
+
+      it('on many to one optional relation', async () => {
+        const rows = await Person.findAll({
+          where: {
+            religion: { name: 'Catholicism' },
+          },
+          order: 'id',
+        });
+        rows.map(r => r.login).should.be.eql([
+          'jdoe',
+          'lcarter',
         ]);
       });
 
