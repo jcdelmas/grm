@@ -24,7 +24,7 @@ const Person = grm.define('Person', {
     age: {},
   },
   relations: {
-    city: { model: 'City' },
+    city: { model: 'City', required: true },
     religion: { model: 'Religion' },
     favoriteMovies: {
       model: 'Movie',
@@ -68,7 +68,7 @@ const City = grm.define('City', {
     name: {},
   },
   relations: {
-    state: { model: 'State' },
+    state: { model: 'State', required: true },
     inhabitants: {
       model: 'Person',
       mappedBy: 'city',
@@ -116,8 +116,8 @@ grm.define('FavoriteMovie', {
     position: {},
   },
   relations: {
-    person: { model: 'Person' },
-    movie: { model: 'Movie' },
+    person: { model: 'Person', required: true },
+    movie: { model: 'Movie', required: true },
   },
 });
 
