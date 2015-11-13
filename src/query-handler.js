@@ -241,7 +241,7 @@ class Scope {
         };
       }
     });
-    this.virtualFields.reverse(); // put dependencies at the beginning
+    this.virtualFields = _.sortBy(this.virtualFields, field => this.model.virtualFields[field].level);
   }
 
   resolveJoins() {

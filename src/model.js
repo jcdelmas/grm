@@ -17,6 +17,8 @@ export default class Model {
     this.fields = this.cfg.fields ? _.mapValues(cfg.fields, this._computeFieldCfg) : {};
     this.virtualFields = this.cfg.virtualFields ? _.mapValues(this.cfg.virtualFields, this._computeVirtualFieldCfg) : {};
 
+    this._computeVirtualFieldsLevel();
+
     this.relations = {};
 
     this._resolvers = {};
@@ -164,6 +166,26 @@ export default class Model {
       ..._(this.relations).pick(r => r.foreignKey).mapValues(() => ({id: true})).value(),
       ..._(this.virtualFields).pick(cfg => cfg.include).mapValues(() => true).value(),
     };
+  }
+
+  _computeVirtualFieldsLevel() {
+    Object.keys(this.virtualFields).forEach(fieldName => this._computeVirtualFieldLevel(fieldName));
+  }
+
+  _computeVirtualFieldLevel(name) {
+    const virtualField = this.virtualFields[name];
+    if (!virtualField.hasOwnProperty('level')) {
+      if (virtualField.dependsOn) {
+        const fields = _.isArray(virtualField.dependsOn) ? virtualField.dependsOn : Object.keys(virtualField.dependsOn);
+        virtualField.level = _(fields)
+          .filter(field => this.virtualFields[field])
+          .map(field => this._computeVirtualFieldLevel(field))
+          .reduce((a, b) => Math.max(a, b), -1) + 1;
+      } else {
+        virtualField.level = 0;
+      }
+    }
+    return virtualField.level;
   }
 }
 
