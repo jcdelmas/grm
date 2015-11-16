@@ -1,5 +1,5 @@
-
 import 'should';
+import _ from 'lodash';
 
 import Grm, { sql } from '../src/index.js';
 import { escape } from '../src/client';
@@ -123,12 +123,12 @@ grm.define('FavoriteMovie', {
 
 const data = {
   persons: [
-      [1, 'John',     'Doe',     'jdoe',     'john.doe@msn.com',          'M', 20, 1, 1],
-      [2, 'Brad',     'Smith',   'bsmith',   'brad.smith@yahoo.com',      'M', 64, 2, null],
-      [3, 'Lauren',   'Carter',  'lcarter',  'lauren.carter@hotmail.com', 'W', 37, 1, 1],
-      [4, 'Robert',   'Johnson', 'rjohnson', 'robert.johnson@gmail.com',  'M', 17, 3, null],
-      [5, 'Patricia', 'Moore',   'pmoore',   'patricia.moore@gmail.com',  'W', 53, 3, null],
-      [6, 'John',     'Brown',   'jbrown',   'john.brown@gmail.com',      'M', 28, 1, 2],
+    [1, 'John', 'Doe', 'jdoe', 'john.doe@msn.com', 'M', 20, 1, 1],
+    [2, 'Brad', 'Smith', 'bsmith', 'brad.smith@yahoo.com', 'M', 64, 2, null],
+    [3, 'Lauren', 'Carter', 'lcarter', 'lauren.carter@hotmail.com', 'W', 37, 1, 1],
+    [4, 'Robert', 'Johnson', 'rjohnson', 'robert.johnson@gmail.com', 'M', 17, 3, null],
+    [5, 'Patricia', 'Moore', 'pmoore', 'patricia.moore@gmail.com', 'W', 53, 3, null],
+    [6, 'John', 'Brown', 'jbrown', 'john.brown@gmail.com', 'M', 28, 1, 2],
   ],
   cities: [
     [1, 'New-York', 1],
@@ -274,14 +274,14 @@ describe('Model', () => {
     describe('includes', () => {
       it('many-to-one', async () => {
         const rows = await Person.findAll({
-          includes: [ 'city' ],
+          includes: ['city'],
           where: { age: { $lt: 30 } },
           order: 'age',
         });
-        rows.map(({ login, city }) => ([ login, city.name ])).should.be.eql([
-          ['rjohnson', 'Los Angeles' ],
-          ['jdoe', 'New-York' ],
-          ['jbrown', 'New-York' ],
+        rows.map(({ login, city }) => ([login, city.name])).should.be.eql([
+          ['rjohnson', 'Los Angeles'],
+          ['jdoe', 'New-York'],
+          ['jbrown', 'New-York'],
         ]);
       });
 
@@ -291,10 +291,10 @@ describe('Model', () => {
           where: { age: { $gt: 30 } },
           order: 'age',
         });
-        rows.map(({ login, favoriteMovies }) => ([ login, favoriteMovies.map(m => m.name) ])).should.be.eql([
-          ['lcarter', [ 'Pulp Fiction', 'The Green Mile', 'The Godfather' ] ],
-          ['pmoore', [ 'Star Wars', 'The Godfather' ] ],
-          ['bsmith', [ 'The Lord of the Rings' ] ],
+        rows.map(({ login, favoriteMovies }) => ([login, favoriteMovies.map(m => m.name)])).should.be.eql([
+          ['lcarter', ['Pulp Fiction', 'The Green Mile', 'The Godfather']],
+          ['pmoore', ['Star Wars', 'The Godfather']],
+          ['bsmith', ['The Lord of the Rings']],
         ]);
       });
 
@@ -303,9 +303,9 @@ describe('Model', () => {
           includes: { cities: true },
           order: 'name',
         });
-        rows.map(({ name, cities }) => ([ name, cities.map(m => m.name) ])).should.be.eql([
-          ['California', [ 'Los Angeles', 'San Francisco' ] ],
-          ['New-York', [ 'New-York' ] ],
+        rows.map(({ name, cities }) => ([name, cities.map(m => m.name)])).should.be.eql([
+          ['California', ['Los Angeles', 'San Francisco']],
+          ['New-York', ['New-York']],
         ]);
       });
 
@@ -315,9 +315,9 @@ describe('Model', () => {
           where: { 'favoriteMovies.name': 'The Godfather' },
           order: 'age',
         });
-        rows.map(({ login, favoriteMovies }) => ([ login, favoriteMovies.map(m => m.name) ])).should.be.eql([
-          ['lcarter', [ 'Pulp Fiction', 'The Green Mile', 'The Godfather' ] ],
-          ['pmoore', [ 'Star Wars', 'The Godfather' ] ],
+        rows.map(({ login, favoriteMovies }) => ([login, favoriteMovies.map(m => m.name)])).should.be.eql([
+          ['lcarter', ['Pulp Fiction', 'The Green Mile', 'The Godfather']],
+          ['pmoore', ['Star Wars', 'The Godfather']],
         ]);
       });
 
@@ -326,7 +326,7 @@ describe('Model', () => {
           includes: { favoriteOldMovies: true },
           order: 'age',
         });
-        rows.map(({ login, favoriteOldMovies }) => ([ login, favoriteOldMovies.map(m => m.name) ])).should.be.eql([
+        rows.map(({ login, favoriteOldMovies }) => ([login, favoriteOldMovies.map(m => m.name)])).should.be.eql([
           ['rjohnson', ['The Good, the Bad and the Ugly']],
           ['jdoe', ['Star Wars']],
           ['jbrown', ['The Good, the Bad and the Ugly']],
@@ -341,13 +341,13 @@ describe('Model', () => {
           includes: { city: { state: true } },
           order: 'login',
         });
-        rows.map(({ login, city }) => [ login, city.name, city.state.name ]).should.be.eql([
-          ['bsmith', 'San Francisco', 'California' ],
-          ['jbrown', 'New-York', 'New-York' ],
-          ['jdoe', 'New-York', 'New-York' ],
-          ['lcarter', 'New-York', 'New-York' ],
-          ['pmoore', 'Los Angeles', 'California' ],
-          ['rjohnson', 'Los Angeles', 'California' ],
+        rows.map(({ login, city }) => [login, city.name, city.state.name]).should.be.eql([
+          ['bsmith', 'San Francisco', 'California'],
+          ['jbrown', 'New-York', 'New-York'],
+          ['jdoe', 'New-York', 'New-York'],
+          ['lcarter', 'New-York', 'New-York'],
+          ['pmoore', 'Los Angeles', 'California'],
+          ['rjohnson', 'Los Angeles', 'California'],
         ]);
       });
 
@@ -356,13 +356,13 @@ describe('Model', () => {
           includes: ['city.state'],
           order: 'login',
         });
-        rows.map(({ login, city }) => [ login, city.name, city.state.name ]).should.be.eql([
-          ['bsmith', 'San Francisco', 'California' ],
-          ['jbrown', 'New-York', 'New-York' ],
-          ['jdoe', 'New-York', 'New-York' ],
-          ['lcarter', 'New-York', 'New-York' ],
-          ['pmoore', 'Los Angeles', 'California' ],
-          ['rjohnson', 'Los Angeles', 'California' ],
+        rows.map(({ login, city }) => [login, city.name, city.state.name]).should.be.eql([
+          ['bsmith', 'San Francisco', 'California'],
+          ['jbrown', 'New-York', 'New-York'],
+          ['jdoe', 'New-York', 'New-York'],
+          ['lcarter', 'New-York', 'New-York'],
+          ['pmoore', 'Los Angeles', 'California'],
+          ['rjohnson', 'Los Angeles', 'California'],
         ]);
       });
 
@@ -444,7 +444,7 @@ describe('Model', () => {
 
       it('multiple', async () => {
         const rows = await Person.findAll({
-          select: [ 'login', 'age' ],
+          select: ['login', 'age'],
           where: { age: { $lt: 30 } },
         });
         rows.should.be.eql([
@@ -489,6 +489,35 @@ describe('Model', () => {
           { login: 'jbrown', age: 29 },
         ]);
       });
+
+      it('with one-to-many relation (exluding target to source link)', async () => {
+        const rows = await State.findAll({
+          select: { name: true, cities: { name: true } },
+        });
+        rows.should.be.eql([
+          { name: 'New-York', cities: [{ name: 'New-York' }]},
+          { name: 'California', cities: [{ name: 'Los Angeles' }, { name: 'San Francisco' }]},
+        ]);
+      });
+
+      it('with many-to-many relation (exluding target to source link)', async () => {
+        const rows = await Person.findAll({
+          select: { login: true, favoriteMovies: { name: true } },
+          where: { age: { $lt: 30 } },
+        });
+        _(rows).map(({ login, favoriteMovies }) => favoriteMovies.map(({ name }) => [login, name]))
+          .flatten().value().should.be.eql([
+            ['jdoe', 'Pulp Fiction'],
+            ['jdoe', 'Star Wars'],
+            ['jdoe', 'The Lord of the Rings'],
+            ['rjohnson', 'The Good, the Bad and the Ugly'],
+            ['rjohnson', 'Usual Suspects'],
+            ['rjohnson', 'The Lord of the Rings'],
+            ['jbrown', 'The Green Mile'],
+            ['jbrown', 'The Lord of the Rings'],
+            ['jbrown', 'The Good, the Bad and the Ugly'],
+          ]);
+      });
     });
 
     describe('sort', () => {
@@ -518,7 +547,7 @@ describe('Model', () => {
 
       it('multiple', async () => {
         const rows = await Person.findAll({
-          order: [ 'firstname', 'lastname' ],
+          order: ['firstname', 'lastname'],
         });
         rows.map(r => r.login).should.be.eql([
           'bsmith',
@@ -620,7 +649,7 @@ describe('Model', () => {
       it('on many to many relation', async () => {
         const rows = await Person.findAll({
           where: {
-            favoriteMovies: { name: { $in: [ 'Pulp Fiction', 'Star Wars' ] } },
+            favoriteMovies: { name: { $in: ['Pulp Fiction', 'Star Wars'] } },
           },
           order: 'id',
         });
@@ -634,7 +663,7 @@ describe('Model', () => {
       it('on multiple relations', async () => {
         const rows = await Person.findAll({
           where: {
-            favoriteMovies: { name: { $in: [ 'Pulp Fiction', 'Star Wars' ] } },
+            favoriteMovies: { name: { $in: ['Pulp Fiction', 'Star Wars'] } },
             'city.name': 'New-York',
           },
           order: 'id',
@@ -686,7 +715,7 @@ describe('Model', () => {
 
       it('with filter on collection relation', async () => {
         const count = await Person.count({
-          'favoriteMovies.name': { $in: [ 'Star Wars', 'The Lord of the Rings' ] },
+          'favoriteMovies.name': { $in: ['Star Wars', 'The Lord of the Rings'] },
         });
         count.should.be.eql(5);
       });
@@ -788,7 +817,7 @@ describe('Model', () => {
           where: { age: { $lt: 30 } },
           order: 'age',
         });
-        rows.map(({ login, emailService }) => [ login, emailService ]).should.be.eql([
+        rows.map(({ login, emailService }) => [login, emailService]).should.be.eql([
           ['rjohnson', 'gmail'],
           ['jdoe', 'msn'],
           ['jbrown', 'gmail'],
@@ -800,7 +829,7 @@ describe('Model', () => {
           where: { age: { $gt: 30 } },
           order: 'age',
         });
-        rows.map(({ login, favoriteMovieName }) => [ login, favoriteMovieName ]).should.be.eql([
+        rows.map(({ login, favoriteMovieName }) => [login, favoriteMovieName]).should.be.eql([
           ['lcarter', 'Pulp Fiction'],
           ['pmoore', 'Star Wars'],
           ['bsmith', 'The Lord of the Rings'],
@@ -812,7 +841,7 @@ describe('Model', () => {
           where: { age: { $gt: 30 } },
           order: 'age',
         });
-        rows.map(({ login, favoriteMovieName }) => [ login, favoriteMovieName ]).should.be.eql([
+        rows.map(({ login, favoriteMovieName }) => [login, favoriteMovieName]).should.be.eql([
           ['lcarter', 'Pulp Fiction'],
           ['pmoore', 'Star Wars'],
           ['bsmith', 'The Lord of the Rings'],
@@ -824,7 +853,7 @@ describe('Model', () => {
           where: { age: { $gt: 30 } },
           order: 'age',
         });
-        rows.map(({ login, favoriteMovieNameUpper }) => [ login, favoriteMovieNameUpper ]).should.be.eql([
+        rows.map(({ login, favoriteMovieNameUpper }) => [login, favoriteMovieNameUpper]).should.be.eql([
           ['lcarter', 'PULP FICTION'],
           ['pmoore', 'STAR WARS'],
           ['bsmith', 'THE LORD OF THE RINGS'],

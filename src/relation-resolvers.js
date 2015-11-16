@@ -71,10 +71,11 @@ class OneToManyResolver {
   }
 
   resolve(rows, select) {
+    const fullSelect = this._checkSelect(select);
     rows.forEach(p => p[this.fieldName] = []);
     const groupedRows = _.groupBy(rows, 'id');
     const promises = _(groupedRows).keys().chunk(BATCH_SIZE).map(ids => {
-      const params = this.getParams({ $in: ids }, select);
+      const params = this.getParams({ $in: ids }, fullSelect);
       return this.targetModel.findAll(params).then(targetRows => {
         targetRows.forEach(targetRow => {
           groupedRows[targetRow[this.relation.mappedBy].id].forEach(row => {
@@ -84,6 +85,26 @@ class OneToManyResolver {
       });
     }).value();
     return Promise.all(promises);
+  }
+
+  _checkSelect(select) {
+    const link = this.relation.mappedBy;
+    if (!select[link]) {
+      return {
+        ...select,
+        [link]: { id: true },
+      };
+    }
+    if (!select[link].id) {
+      return {
+        ...select,
+        [link]: {
+          ...select[link],
+          id: true,
+        },
+      };
+    }
+    return select;
   }
 
   getParams(filter, select) {
