@@ -32,6 +32,7 @@
     "eslint-config-airbnb": "0.0.9",
     "mocha": "^2.3.3",
     "rimraf": "^2.4.3",
-    "should": "^7.1.0"
+    "should": "^7.1.0",
+    "should-promised": "^0.3.1"
   }
 }

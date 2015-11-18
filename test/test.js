@@ -1,4 +1,5 @@
-import 'should';
+import should from 'should';
+import 'should-promised';
 import _ from 'lodash';
 
 import Grm, { sql } from '../src/index.js';
@@ -874,6 +875,80 @@ describe('Model', () => {
           ['Usual Suspects', ['rjohnson']],
           ['The Green Mile', ['lcarter', 'jbrown']],
         ]);
+      });
+    });
+
+    describe('Model::findOne', () => {
+      it('simple', async () => {
+        const person = await Person.findOne({ where: { login: 'jdoe' } });
+        person.should.be.eql({
+          age: 20,
+          city: {
+            id: 1,
+          },
+          email: 'john.doe@msn.com',
+          emailService: 'msn',
+          firstname: 'John',
+          gender: 'M',
+          id: 1,
+          lastname: 'Doe',
+          login: 'jdoe',
+          religion: {
+            id: 1,
+          },
+        });
+      });
+
+      it('with select', async () => {
+        const person = await Person.findOne({ where: { login: 'jdoe' }, select: [ 'email', 'age' ] });
+        person.should.be.eql({
+          age: 20,
+          email: 'john.doe@msn.com',
+        });
+      });
+
+      it('without result', async () => {
+        const person = await Person.findOne({ where: { login: 'unknown' } });
+        should(person).be.null();
+      });
+
+      it('more than one result', () => {
+        return Person.findOne({ where: { age: { $gt: 30 } } }).should.be.rejected();
+      });
+    });
+
+    describe('Model::findById', () => {
+      it('simple', async () => {
+        const person = await Person.findById(1);
+        person.should.be.eql({
+          age: 20,
+          city: {
+            id: 1,
+          },
+          email: 'john.doe@msn.com',
+          emailService: 'msn',
+          firstname: 'John',
+          gender: 'M',
+          id: 1,
+          lastname: 'Doe',
+          login: 'jdoe',
+          religion: {
+            id: 1,
+          },
+        });
+      });
+
+      it('with select', async () => {
+        const person = await Person.findById(1, { $defaults: false, email: true, age: true });
+        person.should.be.eql({
+          age: 20,
+          email: 'john.doe@msn.com',
+        });
+      });
+
+      it('without result', async () => {
+        const person = await Person.findById(9999);
+        should(person).be.null();
       });
     });
   });

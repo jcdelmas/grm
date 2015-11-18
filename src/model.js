@@ -29,14 +29,9 @@ export default class Model {
   }
 
   findById(id, includes = true) {
-    return this.orm.query(this, {
+    return this.findOne({
       where: { id },
       includes: includes,
-    }).then(rows => {
-      if (rows.length === 0) {
-        throw new Error(`No ${this.name} found with id [${id}]`);
-      }
-      return rows[0];
     });
   }
 
@@ -45,7 +40,7 @@ export default class Model {
       if (rows.length > 1) {
         throw new Error(`More than 1 row returned`);
       }
-      return rows[0];
+      return rows.length === 1 ? rows[0] : null;
     });
   }
 
