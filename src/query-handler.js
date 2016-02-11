@@ -33,7 +33,6 @@ class QueryHandler {
     this.model = model;
     this.query = query;
 
-    this.fields = {};
     this.aliasCounter = 0;
     this.distinctRows = false;
 
@@ -129,10 +128,6 @@ class QueryHandler {
     } else {
       return selectSql;
     }
-  }
-
-  resolveField (fieldName) {
-    return this.rootScope.resolveField(fieldName);
   }
 
   refineRow = (row) => {
