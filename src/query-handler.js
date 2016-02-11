@@ -16,7 +16,7 @@ import {
 import IncludesResolver from './includes-resolver';
 
 export default (orm) => (model, query) => {
-  return new QueryHandler(orm, model, query).execute();
+  return new QueryHandler(model, query).execute();
 };
 
 /**
@@ -25,12 +25,11 @@ export default (orm) => (model, query) => {
 
 class QueryHandler {
   /**
-   * @param {Grm} orm
    * @param {Model} model
    * @param {object} query
    */
-  constructor (orm, model, query = {}) {
-    this.orm = orm;
+  constructor (model, query = {}) {
+    this.orm = model.orm;
     this.model = model;
     this.query = query;
 
