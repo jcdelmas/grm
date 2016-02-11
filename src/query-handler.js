@@ -101,14 +101,10 @@ class QueryHandler {
     const rowParser = this.rowParser();
     return this.orm.client.query(query).then(rawResults => {
       const rows = rawResults.map(rowParser);
-      if (this.hasModelResult()) {
-        return this.rootScope.resolveSubsequentFetches(rows).then(() => {
-          rows.forEach(row => this.rootScope.resolveVirtualFields(row));
-          return rows.map(this.refineRow);
-        });
-      } else {
-        return rows;
-      }
+      return this.rootScope.resolveSubsequentFetches(rows).then(() => {
+        rows.forEach(row => this.rootScope.resolveVirtualFields(row));
+        return rows.map(this.refineRow);
+      });
     });
   }
 
@@ -138,10 +134,6 @@ class QueryHandler {
 
   resolveField (fieldName) {
     return this.rootScope.resolveField(fieldName);
-  }
-
-  hasModelResult () {
-    return !this.scalarResult;
   }
 
   refineRow = (row) => {
