@@ -2,7 +2,7 @@
 import _ from 'lodash';
 import decamelize from 'decamelize';
 
-import queryHandler from './query-handler';
+import query from './query-executor';
 import { Relations } from './constants';
 import sql from './ast';
 import createResolver from './relation-resolvers';
@@ -62,7 +62,7 @@ export default class Model {
   }
 
   _query (q) {
-    return queryHandler({
+    return query({
       ...q,
       model: this,
     });

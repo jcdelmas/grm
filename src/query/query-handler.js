@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import { escape, escapeId } from './client.js';
+import { escape, escapeId } from '../client.js';
 import {
   Op,
   Predicate,
@@ -12,8 +12,8 @@ import {
   FuncCall,
   InfixOp,
   Ordering,
-} from './ast.js';
-import IncludesResolver from './includes-resolver';
+} from '../ast.js';
+import IncludesResolver from '../includes-resolver';
 
 export default (query) => {
   return new QueryHandler(query).execute();
@@ -34,18 +34,13 @@ class QueryHandler {
     this.aliasCounter = 0;
     this.distinctRows = false;
 
-    this.scalarResult = query.select && !_.isPlainObject(query.select) && !_.isArray(query.select);
-    this.includes = IncludesResolver.of(query.model).resolve(
-      !this.scalarResult ? (query.select || query.includes || true) : { value: query.select },
-      !query.select
-    );
     this.rootScope = new Scope(this, query.model);
 
     this.parser = new Parser(this.rootScope);
   }
 
   execute () {
-    this.rootScope.includes(this.includes);
+    this.rootScope.includes(this.query.select);
 
     const wherePart = this.query.where ? this.parser.parseFilter(this.query.where) : null;
 
@@ -94,9 +89,8 @@ class QueryHandler {
     }
 
     const query = qb.join('');
-    const rowParser = this.rowParser();
     return this.orm.client.query(query).then(rawResults => {
-      const rows = rawResults.map(rowParser);
+      const rows = rawResults.map(row => this.rootScope.parseRow(row));
       return this.rootScope.resolveSubsequentFetches(rows).then(() => {
         rows.forEach(row => this.rootScope.resolveVirtualFields(row));
         return rows.map(this.refineRow);
@@ -108,11 +102,6 @@ class QueryHandler {
     const alias = '_' + this.aliasCounter;
     this.aliasCounter++;
     return alias;
-  }
-
-  rowParser () {
-    const base = row => this.rootScope.parseRow(row);
-    return !this.scalarResult ? base : _.flow(base, row => row.value);
   }
 
   resolveSelect () {
@@ -129,7 +118,7 @@ class QueryHandler {
   }
 
   refineRow = (row) => {
-    return this.refineR(row, this.includes);
+    return this.refineR(row, this.query.select);
   };
 
   /**
