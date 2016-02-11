@@ -128,11 +128,11 @@ class QueryHandler {
   }
 
   resolveSelect () {
+    const distinct = this.distinctRows ? 'DISTINCT ' : '';
     if (this.query.count) {
-      const distinct = this.distinctRows ? 'DISTINCT ' : '';
       return `COUNT(${distinct}${this.resolveField('id')}) AS value`;
     } else {
-      return (this.distinctRows ? 'DISTINCT ' : '') + this.rootScope.resolveSelect().join(', ');
+      return distinct + this.rootScope.resolveSelect().join(', ');
     }
   }
 
