@@ -2,6 +2,7 @@
 import 'should';
 
 import Grm from '../src/index.js';
+import IncludesResolver from '../src/includes-resolver';
 
 const grm = new Grm({
   user: 'root',
@@ -105,7 +106,7 @@ grm.define('FavoriteMovie', {
 
 describe('Include resolver', () => {
   it('should return only default fields of relation', async () => {
-    const includes = grm.includesResolver.resolve(Movie, ['fans']);
+    const includes = IncludesResolver.of(Movie).resolve(['fans']);
     includes.should.be.eql({
       id: true,
       name: true,

@@ -2,50 +2,58 @@
 import _ from 'lodash';
 
 export default class IncludesResolver {
+
   /**
-   * @param {Grm} grm
+   * @param {Model} model
    */
-  constructor(grm) {
-    this.grm = grm;
+  static of(model) {
+    return new IncludesResolver(model);
   }
 
   /**
    * @param {Model} model
-   * @param {object|boolean} userIncludes
+   */
+  constructor(model) {
+    this.grm = model.orm;
+    this.model = model;
+  }
+
+  /**
+   * @param {array|object|boolean} userIncludes
    * @param {boolean} includeDefaults
    */
-  resolve(model, userIncludes, includeDefaults = true) {
+  resolve(userIncludes, includeDefaults = true) {
     if (_.isPlainObject(userIncludes)) {
       const relationsIncludes = _(userIncludes)
-        .pick((cfg, fieldName) => (cfg === true || _.isPlainObject(cfg)) && model.relations[fieldName])
+        .pick((cfg, fieldName) => (cfg === true || _.isPlainObject(cfg)) && this.model.relations[fieldName])
         .mapValues((cfg, fieldName) => {
-          const relationModel = this.grm.registry.get(model.relations[fieldName].model);
-          return this.resolve(relationModel, cfg, includeDefaults);
+          const relationModel = this.grm.registry.get(this.model.relations[fieldName].model);
+          return IncludesResolver.of(relationModel).resolve(cfg, includeDefaults);
         }).value();
       const newIncludes = {
         ..._.omit(userIncludes, '$defaults'),
         ...relationsIncludes,
       };
       if ((!userIncludes.hasOwnProperty('$defaults') && includeDefaults) || userIncludes.$defaults) {
-        return this._mergeIncludes(model.defaultIncludes, newIncludes);
+        return this._mergeIncludes(this.model.defaultIncludes, newIncludes);
       } else {
         return newIncludes;
       }
     } else if (userIncludes === true) {
-      return model.defaultIncludes;
+      return this.model.defaultIncludes;
     } else if (_.isArray(userIncludes)) {
       const objectUserIncludes = userIncludes.reduce((acc, field) => {
         const fieldObject = field.split('.').reduceRight((acc2, token) => ({ [token]: acc2 }), true);
         return _.merge(acc, fieldObject);
       }, {});
-      return this.resolve(model, objectUserIncludes, includeDefaults);
+      return this.resolve(objectUserIncludes, includeDefaults);
     } else {
       return {};
     }
   }
 
-  mergeDependencies(model, includes) {
-    return this._addMissingIds(model, this._mergeVirtualFieldsDependencies(model, includes));
+  mergeDependencies(includes) {
+    return this._addMissingIds(this._mergeVirtualFieldsDependencies(includes));
   }
 
   /**
@@ -53,28 +61,28 @@ export default class IncludesResolver {
    * @param {object} includes
    * @return {object}
    */
-  _mergeVirtualFieldsDependencies(model, includes) {
-    return _(model.virtualFields)
+  _mergeVirtualFieldsDependencies(includes) {
+    return _(this.model.virtualFields)
         .filter((cfg, field) => includes[field])
         .map('dependsOn')
         .reduce((target, source) => {
-          return this._mergeIncludes(target, this._fullResolve(model, source));
+          return this._mergeIncludes(target, this._fullResolve(source));
         }, includes);
   }
 
-  _addMissingIds(model, includes) {
+  _addMissingIds(includes) {
     return {
       ...includes,
       id: true,
-      ..._(model.relations)
+      ..._(this.model.relations)
         .pick((cfg, field) => includes[field])
-        .mapValues((cfg, field) => this._addMissingIds(cfg.model, includes[field]))
+        .mapValues((cfg, field) => IncludesResolver.of(cfg.model)._addMissingIds(includes[field]))
         .value(),
     };
   }
 
-  _fullResolve(model, includes) {
-    return this._mergeVirtualFieldsDependencies(model, this.resolve(model, includes, false));
+  _fullResolve(includes) {
+    return this._mergeVirtualFieldsDependencies(this.resolve(includes, false));
   }
 
   _mergeIncludes(target, source) {

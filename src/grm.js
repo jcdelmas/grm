@@ -19,7 +19,6 @@ export default class Grm {
     this.registry = new Registry();
     this.client = this._createClient();
     this.query = queryHandlerFactory(this);
-    this.includesResolver = new IncludesResolver(this);
   }
 
   define(name, config) {
