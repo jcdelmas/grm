@@ -3,6 +3,7 @@ import _ from 'lodash';
 import decamelize from 'decamelize';
 
 import { Relations } from './constants';
+import sql from './ast';
 import createResolver from './relation-resolvers';
 import Promises from './utils/promises';
 
@@ -49,7 +50,7 @@ export default class Model {
   }
 
   count(where) {
-    return this.orm.query(this, { count: true, where }).then((rows) => rows[0]);
+    return this.orm.query(this, { select: sql.count(sql.field('id')), where }).then((rows) => rows[0]);
   }
 
   countAndFindAll(q) {

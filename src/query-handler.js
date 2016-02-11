@@ -119,20 +119,20 @@ class QueryHandler {
   }
 
   rowParser () {
-    if (this.query.count) {
-      return row => row.value;
-    } else {
-      const base = row => this.rootScope.parseRow(row);
-      return !this.scalarResult ? base : _.flow(base, row => row.value);
-    }
+    const base = row => this.rootScope.parseRow(row);
+    return !this.scalarResult ? base : _.flow(base, row => row.value);
   }
 
   resolveSelect () {
-    const distinct = this.distinctRows ? 'DISTINCT ' : '';
-    if (this.query.count) {
-      return `COUNT(${distinct}${this.resolveField('id')}) AS value`;
+    const selectSql = this.rootScope.resolveSelect().join(', ');
+    if (this.distinctRows) {
+      if (this.rootScope.isAggregate) {
+        return selectSql.replace(/COUNT\((\w+\.`\w+`)\)/g, 'COUNT(DISTINCT $1)');
+      } else {
+        return 'DISTINCT ' + selectSql;
+      }
     } else {
-      return distinct + this.rootScope.resolveSelect().join(', ');
+      return selectSql;
     }
   }
 
@@ -141,7 +141,7 @@ class QueryHandler {
   }
 
   hasModelResult () {
-    return !this.query.count && !this.scalarResult;
+    return !this.scalarResult;
   }
 
   refineRow = (row) => {
@@ -185,6 +185,7 @@ class Scope {
     this.tableReference = `${escapeId(this.model.tableName)} AS ${this.alias}`;
 
     this.isFetched = false;
+    this.isAggregate = false;
 
     this.fetchedFields = {};
     this.virtualFields = [];
@@ -226,6 +227,9 @@ class Scope {
       } else if (this.model.virtualFields[fieldName] && input === true) {
         this.virtualFields.push(fieldName);
       } else {
+        if (input instanceof Aggregate) {
+          this.isAggregate = true;
+        }
         const parent = this;
         this.fetchedFields[fieldName] = {
           alias: this.queryHandler.nextAlias(),
