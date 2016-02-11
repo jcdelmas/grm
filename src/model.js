@@ -2,6 +2,7 @@
 import _ from 'lodash';
 import decamelize from 'decamelize';
 
+import queryHandler from './query-handler';
 import { Relations } from './constants';
 import sql from './ast';
 import createResolver from './relation-resolvers';
@@ -37,7 +38,7 @@ export default class Model {
   }
 
   findOne(q) {
-    return this.orm.query(this, q).then(rows => {
+    return this._query(q).then(rows => {
       if (rows.length > 1) {
         throw new Error(`More than 1 row returned`);
       }
@@ -46,11 +47,11 @@ export default class Model {
   }
 
   findAll(q) {
-    return this.orm.query(this, q);
+    return this._query(q);
   }
 
   count(where) {
-    return this.orm.query(this, { select: sql.count(sql.field('id')), where }).then((rows) => rows[0]);
+    return this._query({ select: sql.count(sql.field('id')), where }).then((rows) => rows[0]);
   }
 
   countAndFindAll(q) {
@@ -59,6 +60,14 @@ export default class Model {
       rows: this.findAll(q),
     });
   }
+
+  _query (q) {
+    return queryHandler({
+      ...q,
+      model: this,
+    });
+  }
+
 
   _computeFieldCfg = (baseCfg, fieldName) => {
     const cfg = _.clone(baseCfg);

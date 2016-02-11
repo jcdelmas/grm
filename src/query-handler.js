@@ -15,8 +15,8 @@ import {
 } from './ast.js';
 import IncludesResolver from './includes-resolver';
 
-export default (orm) => (model, query) => {
-  return new QueryHandler(model, query).execute();
+export default (query) => {
+  return new QueryHandler(query).execute();
 };
 
 /**
@@ -25,23 +25,21 @@ export default (orm) => (model, query) => {
 
 class QueryHandler {
   /**
-   * @param {Model} model
    * @param {object} query
    */
-  constructor (model, query = {}) {
-    this.orm = model.orm;
-    this.model = model;
+  constructor (query) {
     this.query = query;
+    this.orm = query.model.orm;
 
     this.aliasCounter = 0;
     this.distinctRows = false;
 
     this.scalarResult = query.select && !_.isPlainObject(query.select) && !_.isArray(query.select);
-    this.includes = IncludesResolver.of(this.model).resolve(
+    this.includes = IncludesResolver.of(query.model).resolve(
       !this.scalarResult ? (query.select || query.includes || true) : { value: query.select },
       !query.select
     );
-    this.rootScope = new Scope(this, model);
+    this.rootScope = new Scope(this, query.model);
 
     this.parser = new Parser(this.rootScope);
   }

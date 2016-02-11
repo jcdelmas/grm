@@ -5,7 +5,6 @@ import Model from './model';
 import Client from './client';
 import withLogger from './client-logger';
 import Registry from './registry';
-import queryHandlerFactory from './query-handler';
 import IncludesResolver from './includes-resolver';
 
 const DEFAULT_CONFIG = {
@@ -18,7 +17,6 @@ export default class Grm {
     this.config = _.defaults(config, DEFAULT_CONFIG);
     this.registry = new Registry();
     this.client = this._createClient();
-    this.query = queryHandlerFactory(this);
   }
 
   define(name, config) {
