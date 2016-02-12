@@ -1,6 +1,8 @@
 import _ from 'lodash';
 import IncludesResolver from '../includes-resolver';
 
+import mapRows from './map-rows';
+
 export default (next) => (query) => {
   const scalarResult = query.select && !_.isPlainObject(query.select) && !_.isArray(query.select);
   const select = IncludesResolver.of(query.model).resolve(
@@ -8,10 +10,10 @@ export default (next) => (query) => {
     !query.select
   );
 
-  const resultP = next({ ...query, select });
+  const result = next({ ...query, select });
   if (scalarResult) {
-    return resultP.then(rows => rows.map(r => r.value));
+    return mapRows(result, row => row.value);
   } else {
-    return resultP;
+    return result;
   }
 };

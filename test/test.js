@@ -1,6 +1,7 @@
 import should from 'should';
 import 'should-promised';
 import _ from 'lodash';
+import toArray from 'stream-to-array';
 
 import Grm, { sql } from '../src/index.js';
 import { escape } from '../src/client';
@@ -950,6 +951,49 @@ describe('Model', () => {
         const person = await Person.findById(9999);
         should(person).be.null();
       });
+    });
+  });
+
+  describe('#stream', () => {
+    it('all rows', async () => {
+      const stream = Person.stream({
+        select: ['login', 'age']
+      }, 2);
+      const rows = await toArray(stream);
+      rows.should.be.eql([
+        { age: 20, login: 'jdoe' },
+        { age: 64, login: 'bsmith' },
+        { age: 37, login: 'lcarter' },
+        { age: 17, login: 'rjohnson' },
+        { age: 53, login: 'pmoore' },
+        { age: 28, login: 'jbrown' },
+      ]);
+    });
+
+    it('with filter', async () => {
+      const stream = Person.stream({
+        select: ['login', 'age'],
+        where: { age: { $gt: 30 } }
+      }, 2);
+      const rows = await toArray(stream);
+      rows.should.be.eql([
+        { age: 64, login: 'bsmith' },
+        { age: 37, login: 'lcarter' },
+        { age: 53, login: 'pmoore' },
+      ]);
+    });
+
+    it('with id field', async () => {
+      const stream = Person.stream({
+        select: ['id', 'login', 'age'],
+        where: { age: { $gt: 30 } }
+      }, 2);
+      const rows = await toArray(stream);
+      rows.should.be.eql([
+        { id: 2, age: 64, login: 'bsmith' },
+        { id: 3, age: 37, login: 'lcarter' },
+        { id: 5, age: 53, login: 'pmoore' },
+      ]);
     });
   });
 });

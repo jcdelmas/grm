@@ -1,4 +1,5 @@
 
+import { Readable } from 'stream';
 import _ from 'lodash';
 import decamelize from 'decamelize';
 
@@ -48,6 +49,14 @@ export default class Model {
 
   findAll(q) {
     return this._query(q);
+  }
+
+  stream(q, batchSize = 50) {
+    return this._query({
+      ...q,
+      stream: true,
+      batchSize
+    });
   }
 
   count(where) {
