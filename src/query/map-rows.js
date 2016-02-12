@@ -6,7 +6,7 @@ export default (result, mapper) => {
     return result.then(rows => rows.map(mapper));
   }
   if (result instanceof Readable) {
-    return result.pipe(streamMap(mapper));
+    return result.pipe(streamMap.obj(mapper));
   }
   throw new Error('Unexpected query result type');
 };

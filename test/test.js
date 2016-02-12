@@ -995,5 +995,18 @@ describe('Model', () => {
         { id: 5, age: 53, login: 'pmoore' },
       ]);
     });
+
+    it('with scalar result', async () => {
+      const stream = Person.stream({
+        select: 'login',
+        where: { age: { $gt: 30 } },
+      }, 2);
+      const rows = await toArray(stream);
+      rows.should.be.eql([
+        'bsmith',
+        'lcarter',
+        'pmoore',
+      ]);
+    });
   });
 });
