@@ -32,7 +32,9 @@ class QueryHandler {
     this.orm = query.model.orm;
 
     this.aliasCounter = 0;
-    this.distinctRows = false;
+    this.distinctRows = !!query.distinct;
+
+    this.basicMode = this.distinctRows || (query.group && query.group !== 'id');
 
     this.rootScope = new Scope(this, query.model);
 
@@ -91,10 +93,14 @@ class QueryHandler {
     const query = qb.join('');
     return this.orm.client.query(query).then(rawResults => {
       const rows = rawResults.map(row => this.rootScope.parseRow(row));
-      return this.rootScope.resolveSubsequentFetches(rows).then(() => {
-        rows.forEach(row => this.rootScope.resolveVirtualFields(row));
-        return rows.map(this.refineRow);
-      });
+      if (!this.basicMode) {
+        return this.rootScope.resolveSubsequentFetches(rows).then(() => {
+          rows.forEach(row => this.rootScope.resolveVirtualFields(row));
+          return rows.map(this.refineRow);
+        });
+      } else {
+        return rows;
+      }
     });
   }
 
@@ -170,7 +176,9 @@ class Scope {
   includes(baseIncludes) {
     this.isFetched = true;
 
-    const includes = IncludesResolver.of(this.model).mergeDependencies(baseIncludes);
+    const includes = !this.queryHandler.basicMode
+      ? IncludesResolver.of(this.model).mergeDependencies(baseIncludes)
+      : baseIncludes;
 
     const parser = new Parser(this);
 
@@ -195,9 +203,15 @@ class Scope {
             this.resolveScope(fieldName).includes(input);
           }
         } else {
+          if (this.queryHandler.basicMode) {
+            throw new Error('Collection inclusion not allowed with \'group\' or \'distinct\' option');
+          }
           this.subsequentFetches[fieldName] = input;
         }
       } else if (this.model.virtualFields[fieldName] && input === true) {
+        if (this.queryHandler.basicMode) {
+          throw new Error('Virtual fields not allowed with \'group\' or \'distinct\' option');
+        }
         this.virtualFields.push(fieldName);
       } else {
         if (input instanceof Aggregate) {
@@ -324,14 +338,10 @@ class Scope {
   }
 
   parseRow(row) {
-    if (row[this.fetchedFields.id.alias] !== null) {
-      return {
-        ..._.mapValues(this.fetchedFields, ({ alias, transform }) => transform ? transform(row[alias]) : row[alias]),
-        ..._.mapValues(this.getFetchedChildren(), child => child.parseRow(row)),
-      };
-    } else {
-      return null;
-    }
+    return {
+      ..._.mapValues(this.fetchedFields, ({ alias, transform }) => transform ? transform(row[alias]) : row[alias]),
+      ..._.mapValues(this.getFetchedChildren(), child => child.parseRow(row)),
+    };
   }
 
   resolveSubsequentFetches(rows) {

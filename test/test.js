@@ -520,6 +520,15 @@ describe('Model', () => {
             ['jbrown', 'The Good, the Bad and the Ugly'],
           ]);
       });
+
+      it('with distinct', async () => {
+        const rows = await Person.findAll({
+          select: 'gender',
+          distinct: true,
+          order: 'gender',
+        });
+        rows.should.be.eql(['M', 'W']);
+      });
     });
 
     describe('sort', () => {
@@ -766,6 +775,18 @@ describe('Model', () => {
           { cityName: 'New-York', count: 3 },
           { cityName: 'Los Angeles', count: 2 },
           { cityName: 'San Francisco', count: 1 },
+        ]);
+      });
+
+      it('one-to-many not blocked when grouping on id field', async () => {
+        const rows = await State.findAll({
+          includes: { cities: true },
+          order: 'name',
+          group: 'id',
+        });
+        rows.map(({ name, cities }) => ([name, cities.map(m => m.name)])).should.be.eql([
+          ['California', ['Los Angeles', 'San Francisco']],
+          ['New-York', ['New-York']],
         ]);
       });
     });
