@@ -957,7 +957,7 @@ describe('Model', () => {
   describe('#stream', () => {
     it('all rows', async () => {
       const stream = Person.stream({
-        select: ['login', 'age']
+        select: ['login', 'age'],
       }, 2);
       const rows = await toArray(stream);
       rows.should.be.eql([
@@ -973,7 +973,7 @@ describe('Model', () => {
     it('with filter', async () => {
       const stream = Person.stream({
         select: ['login', 'age'],
-        where: { age: { $gt: 30 } }
+        where: { age: { $gt: 30 } },
       }, 2);
       const rows = await toArray(stream);
       rows.should.be.eql([
@@ -986,7 +986,7 @@ describe('Model', () => {
     it('with id field', async () => {
       const stream = Person.stream({
         select: ['id', 'login', 'age'],
-        where: { age: { $gt: 30 } }
+        where: { age: { $gt: 30 } },
       }, 2);
       const rows = await toArray(stream);
       rows.should.be.eql([

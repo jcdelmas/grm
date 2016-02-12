@@ -27,7 +27,7 @@ class QueryHandler {
   /**
    * @param {object} query
    */
-  constructor (query) {
+  constructor(query) {
     this.query = query;
     this.orm = query.model.orm;
 
@@ -39,7 +39,7 @@ class QueryHandler {
     this.parser = new Parser(this.rootScope);
   }
 
-  execute () {
+  execute() {
     this.rootScope.includes(this.query.select);
 
     const wherePart = this.query.where ? this.parser.parseFilter(this.query.where) : null;
@@ -98,13 +98,13 @@ class QueryHandler {
     });
   }
 
-  nextAlias () {
+  nextAlias() {
     const alias = '_' + this.aliasCounter;
     this.aliasCounter++;
     return alias;
   }
 
-  resolveSelect () {
+  resolveSelect() {
     const selectSql = this.rootScope.resolveSelect().join(', ');
     if (this.distinctRows) {
       if (this.rootScope.isAggregate) {
@@ -126,7 +126,7 @@ class QueryHandler {
    * @param {object} obj
    * @param {object} includes
    */
-  refineR (obj, includes) {
+  refineR(obj, includes) {
     if (_.isPlainObject(obj)) {
       return _.mapValues(includes, (fieldInc, fieldName) => {
         if (_.isPlainObject(fieldInc)) {
@@ -148,7 +148,7 @@ class Scope {
    * @param {QueryHandler} queryHandler
    * @param {Model} model
    */
-  constructor (queryHandler, model) {
+  constructor(queryHandler, model) {
     this.orm = queryHandler.orm;
     this.queryHandler = queryHandler;
     this.model = model;
@@ -167,7 +167,7 @@ class Scope {
     this.resolvingCustomFields = {};
   }
 
-  includes (baseIncludes) {
+  includes(baseIncludes) {
     this.isFetched = true;
 
     const includes = IncludesResolver.of(this.model).mergeDependencies(baseIncludes);
@@ -206,7 +206,7 @@ class Scope {
         const parent = this;
         this.fetchedFields[fieldName] = {
           alias: this.queryHandler.nextAlias(),
-          get expression () {
+          get expression() {
             if (!this.hasOwnProperty('_resolved')) {
               parent.resolvingCustomFields[fieldName] = true;
               this._resolved = parser.parseSelect(input);
@@ -220,7 +220,7 @@ class Scope {
     this.virtualFields = _.sortBy(this.virtualFields, field => this.model.virtualFields[field].level);
   }
 
-  resolveJoins () {
+  resolveJoins() {
     return _(this.children).map(child => {
       return [
         ...child.joins,
@@ -229,14 +229,14 @@ class Scope {
     }).flatten().value();
   }
 
-  resolveSelect () {
+  resolveSelect() {
     return [
       ..._.map(this.fetchedFields, field => `${field.expression} AS ${field.alias}`),
       ..._(this.getFetchedChildren()).map(child => child.resolveSelect()).flatten().value(),
     ];
   }
 
-  resolveField (fieldName) {
+  resolveField(fieldName) {
     const index = fieldName.indexOf('.');
     if (index !== -1) {
       const baseFieldName = fieldName.slice(0, index);
@@ -266,7 +266,7 @@ class Scope {
    * @param {string} fieldName
    * @return {Scope}
    */
-  resolveScope (fieldName) {
+  resolveScope(fieldName) {
     if (!this.children[fieldName]) {
       if (this.model.relations[fieldName]) {
         const relation = this.model.relations[fieldName];
@@ -292,7 +292,7 @@ class Scope {
    * @param relation
    * @param {Scope} scope
    */
-  resolveRelationJoins (relation, scope) {
+  resolveRelationJoins(relation, scope) {
     const joinType = (relation.required ? 'INNER' : 'LEFT OUTER') + ' JOIN';
     if (relation.foreignKey) {
       return [
@@ -323,7 +323,7 @@ class Scope {
     }
   }
 
-  parseRow (row) {
+  parseRow(row) {
     if (row[this.fetchedFields.id.alias] !== null) {
       return {
         ..._.mapValues(this.fetchedFields, ({ alias, transform }) => transform ? transform(row[alias]) : row[alias]),
@@ -334,7 +334,7 @@ class Scope {
     }
   }
 
-  resolveSubsequentFetches (rows) {
+  resolveSubsequentFetches(rows) {
     const promises = [
       ..._.map(this.subsequentFetches, (cfg, fieldName) => this.model._resolver(fieldName).resolve(rows, cfg)),
       ..._.map(this.getFetchedChildren(), (child, fieldName) => {
@@ -344,7 +344,7 @@ class Scope {
     return Promise.all(promises);
   }
 
-  resolveVirtualFields (row) {
+  resolveVirtualFields(row) {
     if (row !== null) {
       _.forEach(this.getFetchedChildren(), (child, fieldName) => {
         return child.resolveVirtualFields(row[fieldName]);
@@ -355,7 +355,7 @@ class Scope {
     }
   }
 
-  getFetchedChildren () {
+  getFetchedChildren() {
     return _(this.children).mapValues(c => c.scope).pick(s => s.isFetched).value();
   }
 }
@@ -385,27 +385,27 @@ class Parser {
   /**
    * @param {Scope} scope
    */
-  constructor (scope) {
+  constructor(scope) {
     this.scope = scope;
   }
 
-  parseFilter (where) {
+  parseFilter(where) {
     const normalized = Normalizer.predicate(where, {});
     return this.predicate(normalized, true);
   }
 
-  parseSelect (select) {
+  parseSelect(select) {
     const expression = _.isString(select) ? new Field(select) : select;
     return this.expression(expression);
   }
 
-  parseOrder (input) {
+  parseOrder(input) {
     return Normalizer.order(input).map(ordering => {
       return `${this.expression(ordering.expr)} ${ordering.asc ? 'ASC' : 'DESC'}`;
     }).join(', ');
   }
 
-  parseGroup (input) {
+  parseGroup(input) {
     return Normalizer.group(input).map(expr => this.expression(expr)).join(', ');
   }
 
@@ -414,7 +414,7 @@ class Parser {
    * @param {boolean} root
    * @return {string}
    */
-  predicate (expr, root = false) {
+  predicate(expr, root = false) {
     if (expr instanceof Composition) {
       const composition = this.composition(expr);
       return root ? composition : '(' + composition + ')';
@@ -431,7 +431,7 @@ class Parser {
    * @param {Composition} composition
    * @return {string}
    */
-  composition (composition) {
+  composition(composition) {
     return composition.predicates
       .map(term => this.predicate(term))
       .join(' ' + LOGICAL_OPERATORS[composition.op] + ' ');
@@ -441,7 +441,7 @@ class Parser {
    * @param {Negation} negation
    * @return {string}
    */
-  negation (negation) {
+  negation(negation) {
     return 'NOT ' + this.predicate(negation.predicate);
   }
 
@@ -449,7 +449,7 @@ class Parser {
    * @param {Comparison} comparison
    * @return {string}
    */
-  comparison (comparison) {
+  comparison(comparison) {
     if (comparison.term2 !== null) {
       const operator = COMPARISON_OPERATORS[comparison.operator];
       return `${this.expression(comparison.term1)} ${operator} ${this.expression(comparison.term2)}`;
@@ -460,7 +460,7 @@ class Parser {
     }
   }
 
-  expression (expr) {
+  expression(expr) {
     if (expr instanceof Field) {
       return this.scope.resolveField(expr.fieldName);
     } else if (expr instanceof Aggregate) {

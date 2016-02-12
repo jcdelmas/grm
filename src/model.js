@@ -1,5 +1,4 @@
 
-import { Readable } from 'stream';
 import _ from 'lodash';
 import decamelize from 'decamelize';
 
@@ -55,7 +54,7 @@ export default class Model {
     return this._query({
       ...q,
       stream: true,
-      batchSize
+      batchSize,
     });
   }
 
@@ -70,7 +69,7 @@ export default class Model {
     });
   }
 
-  _query (q) {
+  _query(q) {
     return query({
       ...q,
       model: this,

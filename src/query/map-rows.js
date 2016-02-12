@@ -9,4 +9,4 @@ export default (result, mapper) => {
     return result.pipe(streamMap(mapper));
   }
   throw new Error('Unexpected query result type');
-}
+};

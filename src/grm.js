@@ -5,7 +5,6 @@ import Model from './model';
 import Client from './client';
 import withLogger from './client-logger';
 import Registry from './registry';
-import IncludesResolver from './includes-resolver';
 
 const DEFAULT_CONFIG = {
   host: 'localhost',

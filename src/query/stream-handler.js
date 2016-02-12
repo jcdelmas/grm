@@ -1,4 +1,3 @@
-import sql from '../ast';
 import { Readable } from 'stream';
 
 export default (next) => (query) => {
@@ -7,11 +6,11 @@ export default (next) => (query) => {
   } else {
     return next(query);
   }
-}
+};
 
 class QueryStream extends Readable {
 
-  constructor (queryHandler, baseQuery) {
+  constructor(queryHandler, baseQuery) {
     super({ objectMode: true });
     this.queryHandler = queryHandler;
     this.addId = !baseQuery.select.id;
@@ -30,13 +29,13 @@ class QueryStream extends Readable {
   index = 0;
   hasMoreData = true;
 
-  _read () {
+  _read() {
     this._fetchRowsIfRequired()
       .then(this._readNextRow)
       .catch(e => this.emit('error', e));
   }
 
-  _fetchRowsIfRequired () {
+  _fetchRowsIfRequired() {
     if (this.index >= this.rowsSize && this.hasMoreData) {
       return this._fetchRows();
     } else {
@@ -44,7 +43,7 @@ class QueryStream extends Readable {
     }
   }
 
-  _fetchRows () {
+  _fetchRows() {
     const newWhere = this.baseQuery.where
       ? [this.baseQuery.where, { id: { $gt: this.minId } }]
       : { id: { $gt: this.minId } };
@@ -60,7 +59,7 @@ class QueryStream extends Readable {
       if (this.rows.length) {
         this.minId = this.rows[this.rowsSize - 1].id;
       }
-    })
+    });
   }
 
   _readNextRow = () => {
