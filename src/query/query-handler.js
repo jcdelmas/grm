@@ -36,7 +36,7 @@ class QueryHandler {
 
     this.basicMode = this.distinctRows || (query.group && query.group !== 'id');
 
-    this.rootScope = new Scope(this, query.model);
+    this.rootScope = new Scope(this, query.model, true);
 
     this.parser = new Parser(this.rootScope);
   }
@@ -153,8 +153,9 @@ class Scope {
   /**
    * @param {QueryHandler} queryHandler
    * @param {Model} model
+   * @param {boolean} isRoot
    */
-  constructor(queryHandler, model) {
+  constructor(queryHandler, model, isRoot = false) {
     this.orm = queryHandler.orm;
     this.queryHandler = queryHandler;
     this.model = model;
@@ -162,6 +163,8 @@ class Scope {
     this.children = {};
     this.subsequentFetches = {};
     this.tableReference = `${escapeId(this.model.tableName)} AS ${this.alias}`;
+
+    this.isRoot = isRoot;
 
     this.isFetched = false;
     this.isAggregate = false;
@@ -338,10 +341,13 @@ class Scope {
   }
 
   parseRow(row) {
-    return {
-      ..._.mapValues(this.fetchedFields, ({ alias, transform }) => transform ? transform(row[alias]) : row[alias]),
-      ..._.mapValues(this.getFetchedChildren(), child => child.parseRow(row)),
-    };
+    if (this.isRoot || row[this.fetchedFields.id.alias]) {// Required check for directly fetched optional relations
+      return {
+        ..._.mapValues(this.fetchedFields, ({ alias, transform }) => transform ? transform(row[alias]) : row[alias]),
+        ..._.mapValues(this.getFetchedChildren(), child => child.parseRow(row)),
+      };
+    }
+    return null;
   }
 
   resolveSubsequentFetches(rows) {

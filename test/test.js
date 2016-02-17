@@ -98,6 +98,15 @@ grm.define('Religion', {
     id: {},
     name: {},
   },
+  virtualFields: {
+    lowerName: {
+      dependsOn: { name: true },
+      getter() {
+        console.log(this);
+        return this.name.toLowerCase();
+      },
+    },
+  }
 });
 
 const Movie = grm.define('Movie', {
@@ -429,6 +438,36 @@ describe('Model', () => {
           { id: 5, login: 'pmoore', emailService: 'gmail' },
           { id: 6, login: 'jbrown', emailService: 'gmail' },
         ]);
+      });
+
+      it('with optional relation', async () => {
+        const includes = {
+          firstname: false,
+          lastname: false,
+          email: false,
+          emailService: false,
+          gender: false,
+          age: false,
+          city: false,
+          religion: { lowerName: true },
+        };
+        const person1 = await Person.findById(1, includes);
+        person1.should.be.eql({
+          id: 1,
+          login: 'jdoe',
+          religion: {
+            id: 1,
+            name: 'Catholicism',
+            lowerName: 'catholicism',
+          },
+        });
+
+        const person2 = await Person.findById(2, includes);
+        person2.should.be.eql({
+          id: 2,
+          login: 'bsmith',
+          religion: null,
+        });
       });
     });
 
