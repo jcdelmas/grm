@@ -1,7 +1,7 @@
 
 import _ from 'lodash';
 
-import Model from './model';
+import ModelFactory from './model-factory';
 import Client from './client';
 import withLogger from './client-logger';
 import Registry from './registry';
@@ -22,7 +22,7 @@ export default class Grm {
     if (this.registry.contains(name)) {
       throw new Error(`Model [${name}] already defined`);
     }
-    const model = new Model(this, name, config);
+    const model = new ModelFactory(this, name, config).resolve();
     this.registry.register(name, model);
     return model;
   }
