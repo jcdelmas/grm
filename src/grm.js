@@ -28,7 +28,14 @@ export default class Grm {
   }
 
   importFile(filePath) {
-    return require(filePath)(this);
+    const module = require(filePath);
+    if (_.isFunction(module)) {
+      return module(this);
+    } else if (_.isFunction(module.default)) {
+      return module.default(this);
+    } else {
+      throw new Error(`Invalid model file [${filePath}]. Function expected as default export.`);
+    }
   }
 
   _createClient() {
