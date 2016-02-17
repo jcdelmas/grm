@@ -102,7 +102,6 @@ grm.define('Religion', {
     lowerName: {
       dependsOn: { name: true },
       getter() {
-        console.log(this);
         return this.name.toLowerCase();
       },
     },
