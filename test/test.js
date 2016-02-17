@@ -106,7 +106,7 @@ grm.define('Religion', {
         return this.name.toLowerCase();
       },
     },
-  }
+  },
 });
 
 const Movie = grm.define('Movie', {
