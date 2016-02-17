@@ -1,4 +1,4 @@
-
+import 'babel-polyfill';
 import grm from './grm';
 import ast from './ast';
 import { Relations } from './constants';
